@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create checkout session
-    const session = await stripe.checkout.sessions.create({
+    const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       line_items: [
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ sessionId: session.id })
+    return NextResponse.json({ sessionId: checkoutSession.id })
   } catch (error) {
     console.error('Checkout session creation error:', error)
     return NextResponse.json(
