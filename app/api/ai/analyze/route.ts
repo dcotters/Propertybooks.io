@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Configuration, OpenAIApi } from 'openai'
+import OpenAI from 'openai'
 
-const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_KEY }))
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 export async function POST(request: NextRequest) {
   const { text, question, mode } = await request.json()
@@ -21,12 +21,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid mode or missing data' }, { status: 400 })
   }
 
-  const response = await openai.createChatCompletion({
+  const response = await openai.chat.completions.create({
     model: 'gpt-4',
     messages: [{ role: 'user', content: prompt }],
     max_tokens: 500,
     temperature: 0.2,
   })
 
-  return NextResponse.json({ result: response.data.choices[0].message?.content })
+  return NextResponse.json({ result: response.choices[0].message?.content })
 } 
