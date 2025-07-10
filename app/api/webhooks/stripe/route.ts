@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { sendSubscriptionConfirmation } from '@/lib/email'
+import { SubscriptionStatus, SubscriptionPlan } from '@prisma/client'
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
@@ -103,7 +104,7 @@ async function handleSubscriptionDeletion(subscription: any) {
   await prisma.subscription.update({
     where: { stripeCustomerId: customerId },
     data: {
-      status: 'CANCELED',
+      status: SubscriptionStatus.CANCELED,
       cancelAtPeriodEnd: true,
     },
   })
@@ -132,28 +133,28 @@ async function handlePaymentFailed(invoice: any) {
   await prisma.subscription.update({
     where: { stripeCustomerId: customerId },
     data: {
-      status: 'PAST_DUE',
+      status: SubscriptionStatus.PAST_DUE,
     },
   })
 }
 
-function mapStripeStatus(stripeStatus: string): string {
-  const statusMap: Record<string, string> = {
-    active: 'ACTIVE',
-    canceled: 'CANCELED',
-    past_due: 'PAST_DUE',
-    unpaid: 'UNPAID',
-    trialing: 'TRIAL',
+function mapStripeStatus(stripeStatus: string): SubscriptionStatus {
+  const statusMap: Record<string, SubscriptionStatus> = {
+    active: SubscriptionStatus.ACTIVE,
+    canceled: SubscriptionStatus.CANCELED,
+    past_due: SubscriptionStatus.PAST_DUE,
+    unpaid: SubscriptionStatus.UNPAID,
+    trialing: SubscriptionStatus.TRIAL,
   }
-  return statusMap[stripeStatus] || 'UNPAID'
+  return statusMap[stripeStatus] || SubscriptionStatus.UNPAID
 }
 
-function getPlanFromPriceId(priceId: string): string {
-  // Map your Stripe price IDs to plan names
-  const planMap: Record<string, string> = {
-    'price_basic': 'BASIC',
-    'price_premium': 'PREMIUM',
-    'price_enterprise': 'ENTERPRISE',
+function getPlanFromPriceId(priceId: string): SubscriptionPlan {
+  // Map your Stripe price IDs to plan enums
+  const planMap: Record<string, SubscriptionPlan> = {
+    'price_basic': SubscriptionPlan.BASIC,
+    'price_premium': SubscriptionPlan.PREMIUM,
+    'price_enterprise': SubscriptionPlan.ENTERPRISE,
   }
-  return planMap[priceId] || 'FREE'
+  return planMap[priceId] || SubscriptionPlan.FREE
 } 
