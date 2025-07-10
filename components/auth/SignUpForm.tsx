@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { BuildingOfficeIcon } from '@heroicons/react/24/outline'
 
 const signUpSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -71,14 +72,18 @@ export default function SignUpForm() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <div className="flex items-center justify-center mb-6">
+            <BuildingOfficeIcon className="h-12 w-12 text-primary-600" />
+            <span className="ml-3 text-2xl font-bold text-gray-900">PropertyBooks.io</span>
+          </div>
+          <h2 className="text-center text-3xl font-extrabold text-gray-900">
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{' '}
             <a
               href="/auth/signin"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
+              className="font-medium text-primary-600 hover:text-primary-500"
             >
               sign in to your existing account
             </a>
@@ -110,7 +115,7 @@ export default function SignUpForm() {
                 type="text"
                 autoComplete="name"
                 required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
                 placeholder="Enter your full name"
               />
               {errors.name && (
@@ -129,7 +134,7 @@ export default function SignUpForm() {
                 type="email"
                 autoComplete="email"
                 required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
                 placeholder="Enter your email"
               />
               {errors.email && (
@@ -148,7 +153,7 @@ export default function SignUpForm() {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
                 placeholder="Create a password"
               />
               {errors.password && (
@@ -167,7 +172,7 @@ export default function SignUpForm() {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
                 placeholder="Confirm your password"
               />
               {errors.confirmPassword && (
@@ -180,7 +185,7 @@ export default function SignUpForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Creating account...' : 'Create account'}
             </button>
@@ -188,11 +193,11 @@ export default function SignUpForm() {
 
           <div className="text-xs text-gray-500 text-center">
             By creating an account, you agree to our{' '}
-            <a href="/terms" className="text-indigo-600 hover:text-indigo-500">
+            <a href="/terms" className="text-primary-600 hover:text-primary-500">
               Terms of Service
             </a>{' '}
             and{' '}
-            <a href="/privacy" className="text-indigo-600 hover:text-indigo-500">
+            <a href="/privacy" className="text-primary-600 hover:text-primary-500">
               Privacy Policy
             </a>
           </div>

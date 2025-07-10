@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
+import Navigation from '@/components/Navigation'
 import { 
   HomeIcon, 
   CalculatorIcon, 
@@ -26,23 +27,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <BuildingOfficeIcon className="h-8 w-8 text-primary-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">PropertyBooks.io</span>
-            </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-gray-900">Features</a>
-              <a href="#pricing" className="text-gray-600 hover:text-gray-900">Pricing</a>
-              <a href="#calculator" className="text-gray-600 hover:text-gray-900">Calculator</a>
-              <button className="btn-primary">Get Started</button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navigation />
 
       {/* Hero Section */}
       <section className="hero-gradient text-white">
@@ -70,12 +55,12 @@ export default function HomePage() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="flex flex-col sm:flex-row gap-4 justify-center items-center"
             >
-              <button className="bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+              <a href="/auth/signup" className="bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200">
                 Start Free Trial
-              </button>
-              <button className="border-2 border-white text-white font-semibold py-3 px-8 rounded-lg hover:bg-white hover:text-primary-600 transition-colors duration-200">
+              </a>
+              <a href="/calculator" className="border-2 border-white text-white font-semibold py-3 px-8 rounded-lg hover:bg-white hover:text-primary-600 transition-colors duration-200">
                 Try Rent Calculator
-              </button>
+              </a>
             </motion.div>
           </div>
         </div>
@@ -258,9 +243,9 @@ export default function HomePage() {
                   </li>
                 </ul>
                 
-                <button className="btn-primary w-full">
+                <a href="/auth/signup" className="btn-primary w-full block text-center">
                   Start Free Trial
-                </button>
+                </a>
               </div>
             </motion.div>
 
@@ -306,9 +291,9 @@ export default function HomePage() {
                   </li>
                 </ul>
                 
-                <button className="btn-primary w-full">
+                <a href="/auth/signup" className="btn-primary w-full block text-center">
                   Start Free Trial
-                </button>
+                </a>
               </div>
             </motion.div>
           </div>
