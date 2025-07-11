@@ -174,4 +174,4 @@ enum DocumentType {
   INSURANCE
   TAX_DOCUMENT
   OTHER
-} 
+}
