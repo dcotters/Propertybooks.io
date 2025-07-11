@@ -1,4 +1,4 @@
-import SubscriptionPlans from '@/components/subscription/SubscriptionPlans'
+import SubscriptionPlans from '../../components/subscription/SubscriptionPlans'
 
 export default function PricingPage() {
   return (

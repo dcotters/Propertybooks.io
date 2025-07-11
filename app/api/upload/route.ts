@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { uploadFile, generateFileKey } from '@/lib/s3'
-import { prisma } from '@/lib/prisma'
+import { uploadFile, generateFileKey } from '../../../lib/s3'
+import { prisma } from '../../../lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {

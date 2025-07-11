@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { stripe } from '@/lib/stripe'
-import { prisma } from '@/lib/prisma'
+import { stripe } from '../../../lib/stripe'
+import { prisma } from '../../../lib/prisma'
 
 const priceIds = {
   basic: process.env.STRIPE_BASIC_PRICE_ID!,
