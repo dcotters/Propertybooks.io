@@ -15,7 +15,8 @@ import {
   CogIcon,
   BellIcon,
   MagnifyingGlassIcon,
-  XMarkIcon
+  XMarkIcon,
+  PhotoIcon
 } from '@heroicons/react/24/outline'
 import AIAnalysisPanel from '../../components/ai/AIAnalysisPanel'
 
@@ -60,12 +61,24 @@ interface AddPropertyForm {
   monthlyRent: string
 }
 
+interface AddTransactionForm {
+  type: 'INCOME' | 'EXPENSE'
+  amount: string
+  description: string
+  category: string
+  date: string
+  propertyId: string
+  receiptFile?: File
+}
+
 export default function Dashboard() {
   const [properties, setProperties] = useState<Property[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [selectedTab, setSelectedTab] = useState('overview')
   const [showAddPropertyModal, setShowAddPropertyModal] = useState(false)
+  const [showAddTransactionModal, setShowAddTransactionModal] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
   const [propertyForm, setPropertyForm] = useState<AddPropertyForm>({
     name: '',
     address: '',
@@ -77,6 +90,14 @@ export default function Dashboard() {
     purchaseDate: '',
     units: '1',
     monthlyRent: ''
+  })
+  const [transactionForm, setTransactionForm] = useState<AddTransactionForm>({
+    type: 'EXPENSE',
+    amount: '',
+    description: '',
+    category: '',
+    date: new Date().toISOString().split('T')[0],
+    propertyId: ''
   })
 
   // Fetch real data on component mount
@@ -145,6 +166,71 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Error adding property:', error)
+    }
+  }
+
+  const handleAddTransaction = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    try {
+      setUploading(true)
+      let receiptUrl = ''
+
+      // Upload receipt file if provided
+      if (transactionForm.receiptFile) {
+        const formData = new FormData()
+        formData.append('file', transactionForm.receiptFile)
+        formData.append('type', 'receipt')
+        
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json()
+          receiptUrl = uploadResult.url
+        }
+      }
+
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...transactionForm,
+          amount: parseFloat(transactionForm.amount),
+          receiptUrl
+        }),
+      })
+
+      if (response.ok) {
+        const newTransaction = await response.json()
+        setTransactions([newTransaction, ...transactions])
+        setShowAddTransactionModal(false)
+        setTransactionForm({
+          type: 'EXPENSE',
+          amount: '',
+          description: '',
+          category: '',
+          date: new Date().toISOString().split('T')[0],
+          propertyId: ''
+        })
+      }
+    } catch (error) {
+      console.error('Error adding transaction:', error)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setTransactionForm({
+        ...transactionForm,
+        receiptFile: e.target.files[0]
+      })
     }
   }
 
@@ -390,7 +476,10 @@ export default function Dashboard() {
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Recent Transactions</h2>
-                <button className="btn-primary flex items-center">
+                <button 
+                  onClick={() => setShowAddTransactionModal(true)}
+                  className="btn-primary flex items-center"
+                >
                   <PlusIcon className="h-4 w-4 mr-2" />
                   Add Transaction
                 </button>
@@ -519,7 +608,10 @@ export default function Dashboard() {
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900">All Transactions</h2>
-              <button className="btn-primary flex items-center">
+              <button 
+                onClick={() => setShowAddTransactionModal(true)}
+                className="btn-primary flex items-center"
+              >
                 <PlusIcon className="h-4 w-4 mr-2" />
                 Add Transaction
               </button>
@@ -530,7 +622,10 @@ export default function Dashboard() {
                 <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions yet</h3>
                 <p className="text-gray-600 mb-4">Start tracking your income and expenses</p>
-                <button className="btn-primary">
+                <button 
+                  onClick={() => setShowAddTransactionModal(true)}
+                  className="btn-primary"
+                >
                   Add Your First Transaction
                 </button>
               </div>
@@ -553,6 +648,9 @@ export default function Dashboard() {
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Amount
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Receipt
                       </th>
                     </tr>
                   </thead>
@@ -580,6 +678,20 @@ export default function Dashboard() {
                           <span className={transaction.amount > 0 ? 'text-success-600' : 'text-red-600'}>
                             {formatCurrency(Math.abs(transaction.amount))}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {transaction.receiptUrl ? (
+                            <a 
+                              href={transaction.receiptUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary-600 hover:text-primary-900"
+                            >
+                              View
+                            </a>
+                          ) : (
+                            <span className="text-gray-400">None</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -768,6 +880,157 @@ export default function Dashboard() {
                     className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                   >
                     Add Property
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Transaction Modal */}
+      {showAddTransactionModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Add New Transaction</h3>
+                <button
+                  onClick={() => setShowAddTransactionModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleAddTransaction} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Transaction Type</label>
+                  <select
+                    value={transactionForm.type}
+                    onChange={(e) => setTransactionForm({...transactionForm, type: e.target.value as 'INCOME' | 'EXPENSE'})}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="EXPENSE">Expense</option>
+                    <option value="INCOME">Income</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Amount</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={transactionForm.amount}
+                    onChange={(e) => setTransactionForm({...transactionForm, amount: e.target.value})}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  <input
+                    type="text"
+                    required
+                    value={transactionForm.description}
+                    onChange={(e) => setTransactionForm({...transactionForm, description: e.target.value})}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Category</label>
+                  <select
+                    value={transactionForm.category}
+                    onChange={(e) => setTransactionForm({...transactionForm, category: e.target.value})}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="">Select Category</option>
+                    <option value="Rent">Rent</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Insurance">Insurance</option>
+                    <option value="Property Tax">Property Tax</option>
+                    <option value="HOA Fees">HOA Fees</option>
+                    <option value="Repairs">Repairs</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={transactionForm.date}
+                    onChange={(e) => setTransactionForm({...transactionForm, date: e.target.value})}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Property (Optional)</label>
+                  <select
+                    value={transactionForm.propertyId}
+                    onChange={(e) => setTransactionForm({...transactionForm, propertyId: e.target.value})}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="">No Specific Property</option>
+                    {properties.map((property) => (
+                      <option key={property.id} value={property.id}>
+                        {property.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Receipt (Optional)</label>
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                    <div className="space-y-1 text-center">
+                      <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
+                      <div className="flex text-sm text-gray-600">
+                        <label
+                          htmlFor="receipt-upload"
+                          className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
+                        >
+                          <span>Upload a file</span>
+                          <input
+                            id="receipt-upload"
+                            name="receipt-upload"
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            className="sr-only"
+                            onChange={handleFileChange}
+                          />
+                        </label>
+                        <p className="pl-1">or drag and drop</p>
+                      </div>
+                      <p className="text-xs text-gray-500">PDF, PNG, JPG up to 10MB</p>
+                    </div>
+                  </div>
+                  {transactionForm.receiptFile && (
+                    <p className="mt-2 text-sm text-gray-600">
+                      Selected: {transactionForm.receiptFile.name}
+                    </p>
+                  )}
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddTransactionModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={uploading}
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                  >
+                    {uploading ? 'Adding...' : 'Add Transaction'}
                   </button>
                 </div>
               </form>
