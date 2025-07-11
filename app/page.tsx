@@ -138,10 +138,10 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Designed Specifically for Landlords
+              Everything You Need to Manage Your Properties
             </h2>
             <p className="text-lg text-gray-600">
-                             PropertyBooks.io understands landlords instead of treating you like a generic small business owner.
+              PropertyBooks.io provides comprehensive tools designed specifically for landlords.
             </p>
           </div>
 
@@ -155,9 +155,9 @@ export default function HomePage() {
               <div className="bg-primary-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <HomeIcon className="h-8 w-8 text-primary-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Property Tracking</h3>
+              <h3 className="text-xl font-semibold mb-2">Property Management</h3>
               <p className="text-gray-600">
-                Automatically categorize expenses by property and unit. No more guessing which receipt belongs where.
+                Track multiple properties with detailed information including mortgage details, property values, and occupancy rates.
               </p>
             </motion.div>
 
@@ -170,9 +170,9 @@ export default function HomePage() {
               <div className="bg-success-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <CurrencyDollarIcon className="h-8 w-8 text-success-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Rent Collection</h3>
+              <h3 className="text-xl font-semibold mb-2">Financial Tracking</h3>
               <p className="text-gray-600">
-                Track rent payments without chasing people down. Get notified of late payments automatically.
+                Track income, expenses, and cash flow with receipt uploads and automatic categorization.
               </p>
             </motion.div>
 
@@ -185,9 +185,54 @@ export default function HomePage() {
               <div className="bg-warning-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <ChartBarIcon className="h-8 w-8 text-warning-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Tax Reports</h3>
+              <h3 className="text-xl font-semibold mb-2">Advanced Reports</h3>
               <p className="text-gray-600">
-                Generate clean tax reports that don't require a CPA to understand. No sweat during tax time.
+                Generate income statements, cash flow reports, tax summaries, and property performance analysis.
+              </p>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-center"
+            >
+              <div className="bg-info-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <StarIcon className="h-8 w-8 text-info-600" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">AI-Powered Insights</h3>
+              <p className="text-gray-600">
+                Get intelligent analysis of your portfolio with AI-powered recommendations and anomaly detection.
+              </p>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="text-center"
+            >
+              <div className="bg-purple-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <DocumentTextIcon className="h-8 w-8 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Smart Notifications</h3>
+              <p className="text-gray-600">
+                Stay informed with intelligent alerts for overdue rent, high expenses, and property maintenance needs.
+              </p>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="text-center"
+            >
+              <div className="bg-green-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <CalculatorIcon className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Tax Optimization</h3>
+              <p className="text-gray-600">
+                Maximize deductions with tax-optimized reports and expense categorization designed for landlords.
               </p>
             </motion.div>
           </div>
@@ -206,7 +251,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {/* Free Plan */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -214,41 +260,85 @@ export default function HomePage() {
               className="card relative"
             >
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Starter Plan</h3>
-                <div className="text-4xl font-bold text-primary-600 mb-4">
-                  $29<span className="text-lg text-gray-500">/month</span>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Free</h3>
+                <div className="text-3xl font-bold text-primary-600 mb-4">
+                  $0<span className="text-lg text-gray-500">/month</span>
                 </div>
-                <p className="text-gray-600 mb-6">Perfect for landlords with up to 5 properties</p>
+                <p className="text-gray-600 mb-6">Perfect for getting started</p>
                 
-                <ul className="text-left space-y-3 mb-8">
+                <ul className="text-left space-y-2 mb-8 text-sm">
                   <li className="flex items-center">
-                    <CheckCircleIcon className="h-5 w-5 text-success-500 mr-3" />
-                    Property & unit tracking
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    1 Property
                   </li>
                   <li className="flex items-center">
-                    <CheckCircleIcon className="h-5 w-5 text-success-500 mr-3" />
-                    Rent collection & reminders
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    10 Transactions
                   </li>
                   <li className="flex items-center">
-                    <CheckCircleIcon className="h-5 w-5 text-success-500 mr-3" />
-                    Expense categorization
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    5 Documents
                   </li>
                   <li className="flex items-center">
-                    <CheckCircleIcon className="h-5 w-5 text-success-500 mr-3" />
-                    Basic tax reports
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    Basic Property Management
                   </li>
                   <li className="flex items-center">
-                    <CheckCircleIcon className="h-5 w-5 text-success-500 mr-3" />
-                    Email support
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    Transaction Tracking
                   </li>
                 </ul>
                 
-                <a href="/auth/signup" className="btn-primary w-full block text-center">
+                <a href="/auth/signup" className="btn-primary w-full block text-center text-sm py-2">
+                  Get Started Free
+                </a>
+              </div>
+            </motion.div>
+
+            {/* Basic Plan */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="card relative"
+            >
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Basic</h3>
+                <div className="text-3xl font-bold text-primary-600 mb-4">
+                  $19<span className="text-lg text-gray-500">/month</span>
+                </div>
+                <p className="text-gray-600 mb-6">For growing portfolios</p>
+                
+                <ul className="text-left space-y-2 mb-8 text-sm">
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    5 Properties
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    100 Transactions
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    50 Documents
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    Basic Reports
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    Email Support
+                  </li>
+                </ul>
+                
+                <a href="/auth/signup" className="btn-primary w-full block text-center text-sm py-2">
                   Start Free Trial
                 </a>
               </div>
             </motion.div>
 
+            {/* Premium Plan */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -262,37 +352,96 @@ export default function HomePage() {
               </div>
               
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Standard Plan</h3>
-                <div className="text-4xl font-bold text-primary-600 mb-4">
-                  $59<span className="text-lg text-gray-500">/month</span>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Premium</h3>
+                <div className="text-3xl font-bold text-primary-600 mb-4">
+                  $49<span className="text-lg text-gray-500">/month</span>
                 </div>
-                <p className="text-gray-600 mb-6">Extended features for up to 20 properties</p>
+                <p className="text-gray-600 mb-6">For serious investors</p>
                 
-                <ul className="text-left space-y-3 mb-8">
+                <ul className="text-left space-y-2 mb-8 text-sm">
                   <li className="flex items-center">
-                    <CheckCircleIcon className="h-5 w-5 text-success-500 mr-3" />
-                    Everything in Starter
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    25 Properties
                   </li>
                   <li className="flex items-center">
-                    <CheckCircleIcon className="h-5 w-5 text-success-500 mr-3" />
-                    Advanced reporting & analytics
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    1,000 Transactions
                   </li>
                   <li className="flex items-center">
-                    <CheckCircleIcon className="h-5 w-5 text-success-500 mr-3" />
-                    Tenant portal
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    500 Documents
                   </li>
                   <li className="flex items-center">
-                    <CheckCircleIcon className="h-5 w-5 text-success-500 mr-3" />
-                    Maintenance tracking
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    Advanced Reports
                   </li>
                   <li className="flex items-center">
-                    <CheckCircleIcon className="h-5 w-5 text-success-500 mr-3" />
-                    Priority support
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    AI Analysis
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    Tax Optimization
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    Priority Support
                   </li>
                 </ul>
                 
-                <a href="/auth/signup" className="btn-primary w-full block text-center">
+                <a href="/auth/signup" className="btn-primary w-full block text-center text-sm py-2">
                   Start Free Trial
+                </a>
+              </div>
+            </motion.div>
+
+            {/* Enterprise Plan */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="card relative"
+            >
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Enterprise</h3>
+                <div className="text-3xl font-bold text-primary-600 mb-4">
+                  $99<span className="text-lg text-gray-500">/month</span>
+                </div>
+                <p className="text-gray-600 mb-6">For large portfolios</p>
+                
+                <ul className="text-left space-y-2 mb-8 text-sm">
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    Unlimited Properties
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    Unlimited Transactions
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    Unlimited Documents
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    All Features
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    Custom Integrations
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    API Access
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 text-success-500 mr-2" />
+                    Dedicated Support
+                  </li>
+                </ul>
+                
+                <a href="/auth/signup" className="btn-primary w-full block text-center text-sm py-2">
+                  Contact Sales
                 </a>
               </div>
             </motion.div>

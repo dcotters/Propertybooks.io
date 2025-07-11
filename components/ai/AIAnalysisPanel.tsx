@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const MODES = [
   { value: 'summary', label: 'Summarize Data' },
@@ -8,25 +8,76 @@ const MODES = [
   { value: 'anomaly', label: 'Detect Anomalies' },
   { value: 'tax_tips', label: 'Tax Optimization Tips' },
   { value: 'qa', label: 'Ask a Question' },
+  { value: 'auto_analyze', label: 'Auto-Analyze Portfolio' },
 ]
 
 export default function AIAnalysisPanel() {
-  const [mode, setMode] = useState('summary')
+  const [mode, setMode] = useState('auto_analyze')
   const [text, setText] = useState('')
   const [question, setQuestion] = useState('')
   const [result, setResult] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [transactions, setTransactions] = useState<any[]>([])
+  const [properties, setProperties] = useState<any[]>([])
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const fetchData = async () => {
+    try {
+      const [transactionsRes, propertiesRes] = await Promise.all([
+        fetch('/api/transactions'),
+        fetch('/api/properties')
+      ])
+      
+      if (transactionsRes.ok) {
+        const transactionsData = await transactionsRes.json()
+        setTransactions(transactionsData)
+      }
+      
+      if (propertiesRes.ok) {
+        const propertiesData = await propertiesRes.json()
+        setProperties(propertiesData)
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    }
+  }
 
   const handleAnalyze = async () => {
     setLoading(true)
     setError('')
     setResult('')
+    
     try {
+      let dataToAnalyze = text
+      
+      if (mode === 'auto_analyze') {
+        // Auto-analyze portfolio with real data
+        dataToAnalyze = JSON.stringify({
+          properties: properties,
+          transactions: transactions,
+          summary: {
+            totalProperties: properties.length,
+            totalTransactions: transactions.length,
+            totalIncome: transactions.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + Number(t.amount), 0),
+            totalExpenses: transactions.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + Number(t.amount), 0)
+          }
+        })
+      }
+      
       const res = await fetch('/api/ai/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, question, mode }),
+        body: JSON.stringify({ 
+          text: dataToAnalyze, 
+          question, 
+          mode,
+          autoData: mode === 'auto_analyze' ? { properties, transactions } : undefined
+        }),
       })
       const data = await res.json()
       if (res.ok) {

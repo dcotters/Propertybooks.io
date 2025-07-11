@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '../../../lib/prisma'
+import { checkSubscriptionStatus, checkUsageLimits } from '../../../lib/subscription'
 
 export async function GET() {
   try {
@@ -32,6 +33,18 @@ export async function POST(request: NextRequest) {
     
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check subscription status and usage limits
+    const subscription = await checkSubscriptionStatus(session.user.id)
+    const usage = await checkUsageLimits(session.user.id, subscription.plan)
+
+    if (!usage.canAddProperty && usage.limits) {
+      return NextResponse.json({ 
+        error: 'Property limit reached', 
+        message: `You've reached the maximum number of properties (${usage.limits.properties.max}) for your ${subscription.plan} plan. Please upgrade to add more properties.`,
+        upgradeRequired: true
+      }, { status: 403 })
     }
 
     const body = await request.json()
