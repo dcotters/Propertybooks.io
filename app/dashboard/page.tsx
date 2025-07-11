@@ -16,7 +16,7 @@ import {
   BellIcon,
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
-import AIAnalysisPanel from '@/components/ai/AIAnalysisPanel'
+import AIAnalysisPanel from '../../components/ai/AIAnalysisPanel'
 
 interface Property {
   id: string
