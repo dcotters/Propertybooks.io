@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { prisma } from '../../../lib/prisma'
+import { supabase } from '../../../lib/supabase'
 import { checkSubscriptionStatus, checkUsageLimits } from '../../../lib/subscription'
 
 export async function GET() {
@@ -11,14 +11,16 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const properties = await prisma.property.findMany({
-      where: {
-        userId: session.user.id
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    })
+    const { data: properties, error } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('userId', session.user.id)
+      .order('createdAt', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching properties:', error)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     return NextResponse.json(properties)
   } catch (error) {
@@ -50,8 +52,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { name, address, city, state, zipCode, propertyType, purchasePrice, purchaseDate, units, monthlyRent } = body
 
-    const property = await prisma.property.create({
-      data: {
+    const { data: property, error } = await supabase
+      .from('properties')
+      .insert({
         name,
         address,
         city,
@@ -59,10 +62,16 @@ export async function POST(request: NextRequest) {
         zipCode,
         propertyType,
         purchasePrice,
-        purchaseDate: new Date(purchaseDate),
+        purchaseDate: new Date(purchaseDate).toISOString(),
         userId: session.user.id
-      }
-    })
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error creating property:', error)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     return NextResponse.json(property, { status: 201 })
   } catch (error) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { prisma } from '../../../../lib/prisma'
+import { supabase } from '../../../../lib/supabase'
 import { sendWelcomeEmail } from '../../../../lib/email'
 import { z } from 'zod'
 
@@ -16,9 +16,19 @@ export async function POST(request: NextRequest) {
     const { name, email, password } = registerSchema.parse(body)
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
+    const { data: existingUser, error: findError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single()
+
+    if (findError && findError.code !== 'PGRST116') {
+      console.error('Error checking existing user:', findError)
+      return NextResponse.json(
+        { error: 'Database error' },
+        { status: 500 }
+      )
+    }
 
     if (existingUser) {
       return NextResponse.json(
@@ -31,22 +41,37 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 12)
 
     // Create user
-    const user = await prisma.user.create({
-      data: {
+    const { data: user, error: createUserError } = await supabase
+      .from('users')
+      .insert({
         name,
         email,
         password: hashedPassword,
-      },
-    })
+      })
+      .select()
+      .single()
+
+    if (createUserError) {
+      console.error('Error creating user:', createUserError)
+      return NextResponse.json(
+        { error: 'Failed to create user' },
+        { status: 500 }
+      )
+    }
 
     // Create free subscription
-    await prisma.subscription.create({
-      data: {
+    const { error: subscriptionError } = await supabase
+      .from('subscriptions')
+      .insert({
         userId: user.id,
         status: 'ACTIVE',
         plan: 'FREE',
-      },
-    })
+      })
+
+    if (subscriptionError) {
+      console.error('Error creating subscription:', subscriptionError)
+      // Don't fail the registration if subscription creation fails
+    }
 
     // Send welcome email
     await sendWelcomeEmail(email, name)

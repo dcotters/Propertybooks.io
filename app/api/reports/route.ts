@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { prisma } from '../../../lib/prisma'
+import { supabase } from '../../../lib/supabase'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,53 +15,60 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('endDate')
     const propertyId = searchParams.get('propertyId')
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', session.user.email)
+      .single()
 
-    if (!user) {
+    if (userError || !user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Build date filter
-    const dateFilter: any = {}
+    // Build query
+    let query = supabase
+      .from('transactions')
+      .select(`
+        *,
+        property:properties(*)
+      `)
+      .eq('userId', user.id)
+
+    // Add date filter
     if (startDate && endDate) {
-      dateFilter.date = {
-        gte: new Date(startDate),
-        lte: new Date(endDate)
-      }
+      query = query
+        .gte('date', startDate)
+        .lte('date', endDate)
     }
 
-    // Build property filter
-    const propertyFilter = propertyId ? { propertyId } : {}
+    // Add property filter
+    if (propertyId) {
+      query = query.eq('propertyId', propertyId)
+    }
 
     // Get transactions
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        userId: user.id,
-        ...dateFilter,
-        ...propertyFilter
-      },
-      include: {
-        property: true
-      },
-      orderBy: { date: 'desc' }
-    })
+    const { data: transactions, error: transactionsError } = await query
+      .order('date', { ascending: false })
+
+    if (transactionsError) {
+      console.error('Error fetching transactions:', transactionsError)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     let report: any = {}
 
     switch (reportType) {
       case 'income-statement':
-        report = generateIncomeStatement(transactions)
+        report = generateIncomeStatement(transactions || [])
         break
       case 'cash-flow':
-        report = generateCashFlow(transactions)
+        report = generateCashFlow(transactions || [])
         break
       case 'tax-summary':
-        report = generateTaxSummary(transactions)
+        report = generateTaxSummary(transactions || [])
         break
       case 'property-performance':
-        report = generatePropertyPerformance(transactions)
+        report = generatePropertyPerformance(transactions || [])
         break
       default:
         return NextResponse.json({ error: 'Invalid report type' }, { status: 400 })
@@ -111,7 +118,7 @@ function generateIncomeStatement(transactions: any[]) {
 
 function generateCashFlow(transactions: any[]) {
   const monthlyData = transactions.reduce((acc, t) => {
-    const month = t.date.toISOString().slice(0, 7) // YYYY-MM format
+    const month = new Date(t.date).toISOString().slice(0, 7) // YYYY-MM format
     if (!acc[month]) {
       acc[month] = { income: 0, expenses: 0, net: 0 }
     }

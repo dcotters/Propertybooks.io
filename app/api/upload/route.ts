@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { uploadFile, generateFileKey } from '../../../lib/s3'
-import { prisma } from '../../../lib/prisma'
+import { supabase } from '../../../lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
@@ -73,16 +73,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Save document record to database
-    const document = await prisma.document.create({
-      data: {
+    const { data: document, error } = await supabase
+      .from('documents')
+      .insert({
         name: file.name,
-        type: documentType as any,
+        type: documentType,
         url: uploadResult.url!,
         size: file.size,
         propertyId: propertyId || null,
         userId: session.user.id,
-      },
-    })
+      })
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error saving document record:', error)
+      return NextResponse.json(
+        { error: 'Failed to save document record' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,

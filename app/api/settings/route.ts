@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { prisma } from '../../../lib/prisma'
+import { supabase } from '../../../lib/supabase'
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,19 +9,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    })
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, name, email, image, createdAt, updatedAt')
+      .eq('email', session.user.email)
+      .single()
 
-    if (!user) {
+    if (error || !user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
@@ -41,21 +35,20 @@ export async function PUT(request: NextRequest) {
 
     const { name, email } = await request.json()
 
-    const user = await prisma.user.update({
-      where: { email: session.user.email },
-      data: {
+    const { data: user, error } = await supabase
+      .from('users')
+      .update({
         name: name || undefined,
         email: email || undefined
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    })
+      })
+      .eq('email', session.user.email)
+      .select('id, name, email, image, createdAt, updatedAt')
+      .single()
+
+    if (error) {
+      console.error('Error updating user:', error)
+      return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 })
+    }
 
     return NextResponse.json(user)
   } catch (error) {

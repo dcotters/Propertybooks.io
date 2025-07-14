@@ -1,12 +1,14 @@
-import { prisma } from './prisma'
+import { supabase } from './supabase'
 
 export async function checkSubscriptionStatus(userId: string) {
   try {
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId }
-    })
+    const { data: subscription, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('userId', userId)
+      .single()
 
-    if (!subscription) {
+    if (error || !subscription) {
       return { hasActiveSubscription: false, plan: 'FREE' }
     }
 
@@ -15,7 +17,7 @@ export async function checkSubscriptionStatus(userId: string) {
     
     // Check if subscription hasn't expired
     const isNotExpired = !subscription.currentPeriodEnd || 
-      new Date() < subscription.currentPeriodEnd
+      new Date() < new Date(subscription.currentPeriodEnd)
 
     return {
       hasActiveSubscription: isActive && isNotExpired,
@@ -77,19 +79,19 @@ export async function checkUsageLimits(userId: string, plan: string) {
   }
 
   const [propertyCount, transactionCount, documentCount] = await Promise.all([
-    prisma.property.count({ where: { userId } }),
-    prisma.transaction.count({ where: { userId } }),
-    prisma.document.count({ where: { userId } })
+    supabase.from('properties').select('*', { count: 'exact', head: true }).eq('userId', userId),
+    supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('userId', userId),
+    supabase.from('documents').select('*', { count: 'exact', head: true }).eq('userId', userId)
   ])
 
   return {
-    canAddProperty: propertyCount < limits.maxProperties,
-    canAddTransaction: transactionCount < limits.maxTransactions,
-    canAddDocument: documentCount < limits.maxDocuments,
+    canAddProperty: (propertyCount.count || 0) < limits.maxProperties,
+    canAddTransaction: (transactionCount.count || 0) < limits.maxTransactions,
+    canAddDocument: (documentCount.count || 0) < limits.maxDocuments,
     limits: {
-      properties: { current: propertyCount, max: limits.maxProperties },
-      transactions: { current: transactionCount, max: limits.maxTransactions },
-      documents: { current: documentCount, max: limits.maxDocuments }
+      properties: { current: propertyCount.count || 0, max: limits.maxProperties },
+      transactions: { current: transactionCount.count || 0, max: limits.maxTransactions },
+      documents: { current: documentCount.count || 0, max: limits.maxDocuments }
     }
   }
 } 

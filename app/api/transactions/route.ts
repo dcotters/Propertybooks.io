@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { prisma } from '../../../lib/prisma'
+import { supabase } from '../../../lib/supabase'
 import { checkSubscriptionStatus, checkUsageLimits } from '../../../lib/subscription'
 
 export async function GET() {
@@ -11,17 +11,19 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        userId: session.user.id
-      },
-      include: {
-        property: true
-      },
-      orderBy: {
-        date: 'desc'
-      }
-    })
+    const { data: transactions, error } = await supabase
+      .from('transactions')
+      .select(`
+        *,
+        property:properties(*)
+      `)
+      .eq('userId', session.user.id)
+      .order('date', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching transactions:', error)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     return NextResponse.json(transactions)
   } catch (error) {
@@ -53,21 +55,28 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { type, amount, description, category, date, propertyId, receiptUrl } = body
 
-    const transaction = await prisma.transaction.create({
-      data: {
+    const { data: transaction, error } = await supabase
+      .from('transactions')
+      .insert({
         type,
         amount,
         description,
         category,
-        date: new Date(date),
+        date: new Date(date).toISOString(),
         propertyId,
         receiptUrl,
         userId: session.user.id
-      },
-      include: {
-        property: true
-      }
-    })
+      })
+      .select(`
+        *,
+        property:properties(*)
+      `)
+      .single()
+
+    if (error) {
+      console.error('Error creating transaction:', error)
+      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+    }
 
     return NextResponse.json(transaction, { status: 201 })
   } catch (error) {
