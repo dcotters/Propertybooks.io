@@ -71,9 +71,24 @@ model Property {
   city        String
   state       String
   zipCode     String
+  country     String?
   propertyType PropertyType
   purchasePrice Decimal @db.Decimal(10, 2)
   purchaseDate DateTime
+  units       Int?
+  monthlyRent Decimal? @db.Decimal(10, 2)
+  mortgageRate Float?
+  mortgagePayment Decimal? @db.Decimal(10, 2)
+  propertyTax  Decimal? @db.Decimal(10, 2)
+  insurance    Decimal? @db.Decimal(10, 2)
+  hoaFees      Decimal? @db.Decimal(10, 2)
+  estimatedValue Decimal? @db.Decimal(10, 2)
+  yearBuilt    Int?
+  squareFootage Int?
+  bedrooms     Int?
+  bathrooms    Int?
+  parkingSpaces Int?
+  description  String?
   userId      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
