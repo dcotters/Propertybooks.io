@@ -31,110 +31,52 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="hero-gradient text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 flex flex-col md:flex-row items-center justify-between">
+          <div className="md:w-1/2 text-center md:text-left">
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               className="text-5xl md:text-6xl font-bold mb-6"
             >
-              Stop Playing Property Management Detective
+              Accounting for Landlords, <span className="text-primary-300">Simplified</span>
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto"
+              className="text-xl md:text-2xl mb-8 max-w-2xl"
             >
-                             PropertyBooks.io automatically categorizes your expenses, tracks rent payments, and generates clean tax reports designed specifically for landlords.
+              PropertyBooks.io automates expense tracking, rent collection, and tax reporting—so you can focus on growing your portfolio, not your paperwork.
             </motion.p>
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+              className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start items-center"
             >
               <a href="/auth/signup" className="bg-white text-primary-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200">
                 Start Free Trial
               </a>
+              <a href="/pricing" className="border-2 border-white text-white font-semibold py-3 px-8 rounded-lg hover:bg-white hover:text-primary-600 transition-colors duration-200">
+                See Pricing
+              </a>
               <a href="/calculator" className="border-2 border-white text-white font-semibold py-3 px-8 rounded-lg hover:bg-white hover:text-primary-600 transition-colors duration-200">
-                Try Rent Calculator
+                Try Calculator
               </a>
             </motion.div>
           </div>
-        </div>
-      </section>
-
-      {/* Pain Points Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Sound Familiar?
-            </h2>
-            <p className="text-lg text-gray-600">
-              You bought a rental property thinking it would be passive income, but now you're a part-time accountant.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="card"
-            >
-              <div className="flex items-center mb-4">
-                <div className="bg-red-100 p-3 rounded-lg">
-                  <DocumentTextIcon className="h-6 w-6 text-red-600" />
-                </div>
-                <h3 className="ml-3 text-lg font-semibold">Spreadsheet Chaos</h3>
-              </div>
-              <p className="text-gray-600">
-                Managing spreadsheets that make your CPA weep, tracking expenses in three different apps, and trying to remember if that $47 receipt was for the upstairs toilet or downstairs sink.
-              </p>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="card"
-            >
-              <div className="flex items-center mb-4">
-                <div className="bg-yellow-100 p-3 rounded-lg">
-                  <ClockIcon className="h-6 w-6 text-yellow-600" />
-                </div>
-                <h3 className="ml-3 text-lg font-semibold">Late Night Emergencies</h3>
-              </div>
-              <p className="text-gray-600">
-                Playing therapist for tenants who think a clogged toilet constitutes an emergency at 11 PM. Your "investment" has turned into a second job.
-              </p>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="card"
-            >
-              <div className="flex items-center mb-4">
-                <div className="bg-blue-100 p-3 rounded-lg">
-                  <CurrencyDollarIcon className="h-6 w-6 text-blue-600" />
-                </div>
-                <h3 className="ml-3 text-lg font-semibold">Lost Revenue</h3>
-              </div>
-              <p className="text-gray-600">
-                Forgetting to track payments, missing late fees, and your accountant charging extra for deciphering your "system" of sticky notes and random Excel files.
-              </p>
-            </motion.div>
+          <div className="md:w-1/2 mt-12 md:mt-0 flex justify-center">
+            {/* Placeholder for product screenshot/illustration */}
+            <div className="rounded-xl shadow-lg overflow-hidden bg-white">
+              <img src="/product-screenshot-placeholder.png" alt="Product Screenshot" className="w-full h-72 object-cover" />
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-16 bg-white">
+      <section id="features" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
@@ -144,98 +86,55 @@ export default function HomePage() {
               PropertyBooks.io provides comprehensive tools designed specifically for landlords.
             </p>
           </div>
-
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center"
-            >
-              <div className="bg-primary-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <HomeIcon className="h-8 w-8 text-primary-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Property Management</h3>
-              <p className="text-gray-600">
-                Track multiple properties with detailed information including mortgage details, property values, and occupancy rates.
-              </p>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-center"
-            >
-              <div className="bg-success-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <CurrencyDollarIcon className="h-8 w-8 text-success-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Financial Tracking</h3>
-              <p className="text-gray-600">
-                Track income, expenses, and cash flow with receipt uploads and automatic categorization.
-              </p>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-center"
-            >
-              <div className="bg-warning-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <ChartBarIcon className="h-8 w-8 text-warning-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Advanced Reports</h3>
-              <p className="text-gray-600">
-                Generate income statements, cash flow reports, tax summaries, and property performance analysis.
-              </p>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-center"
-            >
-              <div className="bg-info-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <StarIcon className="h-8 w-8 text-info-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">AI-Powered Insights</h3>
-              <p className="text-gray-600">
-                Get intelligent analysis of your portfolio with AI-powered recommendations and anomaly detection.
-              </p>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-center"
-            >
-              <div className="bg-purple-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <DocumentTextIcon className="h-8 w-8 text-purple-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Smart Notifications</h3>
-              <p className="text-gray-600">
-                Stay informed with intelligent alerts for overdue rent, high expenses, and property maintenance needs.
-              </p>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="text-center"
-            >
-              <div className="bg-green-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <CalculatorIcon className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Tax Optimization</h3>
-              <p className="text-gray-600">
-                Maximize deductions with tax-optimized reports and expense categorization designed for landlords.
-              </p>
-            </motion.div>
+            <FeatureCard icon={<HomeIcon className="h-8 w-8 text-primary-600" />} title="Property Management" desc="Track multiple properties, mortgage details, values, and occupancy rates." />
+            <FeatureCard icon={<CurrencyDollarIcon className="h-8 w-8 text-success-600" />} title="Financial Tracking" desc="Track income, expenses, and cash flow with receipt uploads and auto-categorization." />
+            <FeatureCard icon={<ChartBarIcon className="h-8 w-8 text-warning-600" />} title="Advanced Reports" desc="Generate income statements, cash flow reports, and tax summaries." />
+            <FeatureCard icon={<DocumentTextIcon className="h-8 w-8 text-blue-600" />} title="Document Storage" desc="Upload and organize receipts, leases, and important documents." />
+            <FeatureCard icon={<StarIcon className="h-8 w-8 text-yellow-500" />} title="Tax Optimization" desc="Maximize deductions with tax-optimized reports and expense categorization." />
+            <FeatureCard icon={<ClockIcon className="h-8 w-8 text-gray-500" />} title="Automated Reminders" desc="Get notified for overdue rent, high expenses, and maintenance needs." />
           </div>
+        </div>
+      </section>
+
+      {/* How It Works / Product Tour */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
+            <p className="text-lg text-gray-600">Get started in minutes. Manage your properties with ease.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <StepCard step={1} title="Sign Up & Connect" desc="Create your account and connect your properties in seconds." />
+            <StepCard step={2} title="Track & Automate" desc="Automatically import transactions, upload receipts, and categorize expenses." />
+            <StepCard step={3} title="Grow & Optimize" desc="Generate reports, maximize deductions, and scale your portfolio with confidence." />
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials / Social Proof */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">What Landlords Are Saying</h2>
+            <p className="text-lg text-gray-600">Real stories from real property owners.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <TestimonialCard name="Sarah M." quote="PropertyBooks.io saved me hours every month and made tax season a breeze!" />
+            <TestimonialCard name="James L." quote="I finally have a clear view of my rental income and expenses. Highly recommend!" />
+            <TestimonialCard name="Priya S." quote="The best investment I made for my rental business. The reports are gold!" />
+          </div>
+        </div>
+      </section>
+
+      {/* About / Mission Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Mission</h2>
+          <p className="text-lg text-gray-600 mb-6">
+            PropertyBooks.io was built by landlords, for landlords. We believe managing rental properties should be simple, transparent, and stress-free. Our mission is to empower property owners to take control of their finances and grow their investments with confidence.
+          </p>
+          <a href="/about" className="text-primary-600 font-semibold hover:underline">Learn more about our story &rarr;</a>
         </div>
       </section>
 
@@ -522,6 +421,39 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+    </div>
+  )
+} 
+
+// FeatureCard component
+function FeatureCard({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
+  return (
+    <div className="text-center bg-white rounded-xl shadow p-8 flex flex-col items-center">
+      <div className="mb-4">{icon}</div>
+      <h3 className="text-xl font-semibold mb-2">{title}</h3>
+      <p className="text-gray-600">{desc}</p>
+    </div>
+  )
+}
+
+// StepCard component
+function StepCard({ step, title, desc }: { step: number, title: string, desc: string }) {
+  return (
+    <div className="bg-gray-50 rounded-xl shadow p-8 flex flex-col items-center">
+      <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary-100 text-primary-600 text-2xl font-bold mb-4">{step}</div>
+      <h4 className="text-lg font-semibold mb-2">{title}</h4>
+      <p className="text-gray-600 text-center">{desc}</p>
+    </div>
+  )
+}
+
+// TestimonialCard component
+function TestimonialCard({ name, quote }: { name: string, quote: string }) {
+  return (
+    <div className="bg-white rounded-xl shadow p-8 flex flex-col items-center">
+      <StarIcon className="h-8 w-8 text-yellow-400 mb-2" />
+      <p className="text-gray-700 italic mb-4">“{quote}”</p>
+      <span className="font-semibold text-primary-600">{name}</span>
     </div>
   )
 } 

@@ -18,7 +18,8 @@ import {
   XMarkIcon,
   PhotoIcon
 } from '@heroicons/react/24/outline'
-import AIAnalysisPanel from '../../components/ai/AIAnalysisPanel'
+import AIAnalysisPanel, { Modal } from '../../components/ai/AIAnalysisPanel'
+import { useTabContext } from '../../components/providers/TabProvider'
 
 interface Property {
   id: string
@@ -93,7 +94,6 @@ interface AddTransactionForm {
 export default function Dashboard() {
   const [properties, setProperties] = useState<Property[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [selectedTab, setSelectedTab] = useState('overview')
   const [showAddPropertyModal, setShowAddPropertyModal] = useState(false)
   const [showAddTransactionModal, setShowAddTransactionModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
@@ -144,6 +144,8 @@ export default function Dashboard() {
     recurringFrequency: 'MONTHLY',
     tags: []
   })
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const { selectedTab, setSelectedTab } = useTabContext();
 
   // Fetch real data on component mount
   useEffect(() => {
@@ -189,6 +191,10 @@ export default function Dashboard() {
 
   const handleAddProperty = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isAtPropertyLimit) {
+      setShowUpgradeModal(true)
+      return
+    }
     
     try {
       const response = await fetch('/api/properties', {
@@ -249,6 +255,10 @@ export default function Dashboard() {
 
   const handleAddTransaction = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isAtTransactionLimit) {
+      setShowUpgradeModal(true)
+      return
+    }
     
     try {
       setUploading(true)
@@ -425,6 +435,11 @@ export default function Dashboard() {
     }
   }
 
+  // Helper to check free tier limits
+  const isAtPropertyLimit = properties.length >= 1
+  const isAtTransactionLimit = transactions.length >= 10
+  // TODO: Add document limit check if needed
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -552,25 +567,6 @@ export default function Dashboard() {
               </div>
             </div>
           </motion.div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="mb-8">
-          <nav className="flex space-x-8">
-            {['overview', 'properties', 'transactions', 'reports'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setSelectedTab(tab)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm capitalize ${
-                  selectedTab === tab
-                    ? 'border-primary-500 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </nav>
         </div>
 
         {/* Tab Content */}
@@ -1727,6 +1723,10 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      <Modal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} title="Upgrade Required">
+        <p className="mb-4">You've reached the free tier limit. Upgrade to add more properties, transactions, or documents.</p>
+        <a href="/pricing" className="btn-primary w-full block text-center">See Pricing & Upgrade</a>
+      </Modal>
     </div>
   )
 } 

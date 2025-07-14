@@ -3,12 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { 
-  BuildingOfficeIcon,
-  CalculatorIcon,
-  HomeIcon,
-  ChartBarIcon
-} from '@heroicons/react/24/outline'
+import { BuildingOfficeIcon, CalculatorIcon } from '@heroicons/react/24/outline'
 import { useSession, signOut } from 'next-auth/react'
 import { Menu } from '@headlessui/react'
 import { UserCircleIcon } from '@heroicons/react/24/solid'
@@ -17,9 +12,7 @@ export default function Navigation() {
   const pathname = usePathname()
   const { data: session } = useSession()
 
-  const isActive = (path: string) => {
-    return pathname === path
-  }
+  const isActive = (path: string) => pathname === path
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200">
@@ -29,56 +22,47 @@ export default function Navigation() {
             <BuildingOfficeIcon className="h-8 w-8 text-primary-600" />
             <span className="ml-2 text-xl font-bold text-gray-900">PropertyBooks.io</span>
           </Link>
-          
+
+          {/* Desktop navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link 
-              href="/" 
-              className={`${
-                isActive('/') 
-                  ? 'text-primary-600 border-b-2 border-primary-600' 
-                  : 'text-gray-600 hover:text-gray-900'
-              } py-2 px-1 font-medium`}
-            >
-              Home
-            </Link>
-            <Link 
-              href="/calculator" 
-              className={`${
-                isActive('/calculator') 
-                  ? 'text-primary-600 border-b-2 border-primary-600' 
-                  : 'text-gray-600 hover:text-gray-900'
-              } py-2 px-1 font-medium flex items-center`}
-            >
-              <CalculatorIcon className="h-4 w-4 mr-1" />
-              Calculator
-            </Link>
-            <Link 
-              href="/dashboard" 
-              className={`${
-                isActive('/dashboard') 
-                  ? 'text-primary-600 border-b-2 border-primary-600' 
-                  : 'text-gray-600 hover:text-gray-900'
-              } py-2 px-1 font-medium flex items-center`}
-            >
-              <ChartBarIcon className="h-4 w-4 mr-1" />
-              Dashboard
-            </Link>
             {!session?.user && (
               <>
+                <Link 
+                  href="/" 
+                  className={`${isActive('/') ? 'text-primary-600 border-b-2 border-primary-600' : 'text-gray-600 hover:text-gray-900'} py-2 px-1 font-medium`}
+                >
+                  Home
+                </Link>
+                <Link 
+                  href="/pricing" 
+                  className={`${isActive('/pricing') ? 'text-primary-600 border-b-2 border-primary-600' : 'text-gray-600 hover:text-gray-900'} py-2 px-1 font-medium`}
+                >
+                  Pricing
+                </Link>
+                <Link 
+                  href="/calculator" 
+                  className={`${isActive('/calculator') ? 'text-primary-600 border-b-2 border-primary-600' : 'text-gray-600 hover:text-gray-900'} py-2 px-1 font-medium flex items-center`}
+                >
+                  <CalculatorIcon className="h-4 w-4 mr-1" />
+                  Calculator
+                </Link>
                 <Link 
                   href="/auth/signin" 
                   className="text-gray-600 hover:text-gray-900 py-2 px-1 font-medium"
                 >
-                  Sign In
+                  Log In
                 </Link>
                 <Link href="/auth/signup" className="btn-primary">
                   Get Started
                 </Link>
               </>
             )}
+            {session?.user && (
+              <></> // No extra links for logged-in users; all app navigation is in sidebar
+            )}
           </div>
 
-          {/* User avatar and dropdown */}
+          {/* User avatar and dropdown for logged-in users */}
           {session?.user ? (
             <Menu as="div" className="relative ml-4">
               <Menu.Button className="flex items-center focus:outline-none">
@@ -121,7 +105,7 @@ export default function Navigation() {
             </Menu>
           ) : null}
 
-          {/* Mobile menu button */}
+          {/* Mobile menu button (not implemented) */}
           <div className="md:hidden">
             <button className="text-gray-600 hover:text-gray-900">
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

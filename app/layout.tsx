@@ -3,6 +3,8 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import SessionProvider from '../components/providers/SessionProvider'
+import { TabProvider } from '../components/providers/TabProvider'
+import Footer from '../components/Footer'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -21,7 +23,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <SessionProvider>
-          {children}
+          <TabProvider>
+            {children}
+            <Footer />
+          </TabProvider>
         </SessionProvider>
       </body>
     </html>

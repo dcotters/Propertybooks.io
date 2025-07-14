@@ -56,9 +56,9 @@ export default function SignUpForm() {
       if (!response.ok) {
         setError(result.error || 'Registration failed')
       } else {
-        setSuccess('Account created successfully! Please sign in.')
+        setSuccess('Account created successfully! Redirecting to your dashboard...')
         setTimeout(() => {
-          router.push('/auth/signin')
+          router.push('/dashboard')
         }, 2000)
       }
     } catch (error) {

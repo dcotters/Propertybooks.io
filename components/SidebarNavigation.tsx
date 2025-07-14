@@ -8,14 +8,22 @@ import { Menu } from '@headlessui/react'
 import { useSession, signOut } from 'next-auth/react'
 import { UserCircleIcon } from '@heroicons/react/24/solid'
 import { useState } from 'react'
+import { useTabContext } from './providers/TabProvider'
 
-const navLinks = [
-  { href: '/dashboard', label: 'Dashboard', icon: ChartBarIcon },
-  { href: '/calculator', label: 'Calculator', icon: CalculatorIcon },
-  // Add more links as needed
+interface SidebarNavigationProps {
+  selectedTab: string;
+  setSelectedTab: (tab: string) => void;
+}
+
+const sidebarTabs = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'properties', label: 'Properties' },
+  { key: 'transactions', label: 'Transactions' },
+  { key: 'reports', label: 'Reports' },
 ]
 
 export default function SidebarNavigation() {
+  const { selectedTab, setSelectedTab } = useTabContext();
   const pathname = usePathname()
   const { data: session, status } = useSession()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
@@ -39,7 +47,7 @@ export default function SidebarNavigation() {
         </div>
         <div className="flex-1 px-4 py-6">
           <div className="animate-pulse space-y-2">
-            {navLinks.map((_, index) => (
+            {sidebarTabs.map((_, index) => (
               <div key={index} className="h-10 bg-gray-200 rounded-lg"></div>
             ))}
           </div>
@@ -57,19 +65,18 @@ export default function SidebarNavigation() {
         </Link>
       </div>
       <nav className="flex-1 px-4 py-6 space-y-2">
-        {navLinks.map(link => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={`flex items-center px-4 py-2 rounded-lg font-medium transition-colors duration-150 ${
-              pathname.startsWith(link.href)
-                ? 'bg-primary-100 text-primary-700' 
+        {sidebarTabs.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setSelectedTab(tab.key)}
+            className={`flex items-center w-full px-4 py-2 rounded-lg font-medium transition-colors duration-150 text-left ${
+              selectedTab === tab.key
+                ? 'bg-primary-100 text-primary-700 border-l-4 border-primary-500' 
                 : 'text-gray-700 hover:bg-gray-100'
             }`}
           >
-            <link.icon className="h-5 w-5 mr-3" />
-            {link.label}
-          </Link>
+            {tab.label}
+          </button>
         ))}
       </nav>
       <div className="mt-auto px-4 pb-6">
