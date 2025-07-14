@@ -1,4 +1,5 @@
 'use client'
+// Force deployment update - ensure 'use client' is recognized
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
