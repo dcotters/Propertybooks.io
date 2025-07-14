@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { stripe } from '../../../lib/stripe'
-import { prisma } from '../../../lib/prisma'
+import { supabase } from '../../../lib/supabase'
 
 const priceIds = {
   basic: process.env.STRIPE_BASIC_PRICE_ID!,
@@ -30,20 +30,36 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user and their current subscription
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      include: { subscriptions: true },
-    })
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', session.user.id)
+      .single()
 
-    if (!user) {
+    if (userError || !user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       )
     }
 
+    // Get user's subscription
+    const { data: subscription, error: subscriptionError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('userId', session.user.id)
+      .single()
+
+    if (subscriptionError && subscriptionError.code !== 'PGRST116') {
+      console.error('Error fetching subscription:', subscriptionError)
+      return NextResponse.json(
+        { error: 'Database error' },
+        { status: 500 }
+      )
+    }
+
     // Create or get Stripe customer
-    let customerId = user.subscriptions[0]?.stripeCustomerId
+    let customerId = subscription?.stripeCustomerId
 
     if (!customerId) {
       const customer = await stripe.customers.create({
@@ -56,10 +72,14 @@ export async function POST(request: NextRequest) {
       customerId = customer.id
 
       // Update user's subscription with customer ID
-      await prisma.subscription.update({
-        where: { userId: user.id },
-        data: { stripeCustomerId: customerId },
-      })
+      const { error: updateError } = await supabase
+        .from('subscriptions')
+        .update({ stripeCustomerId: customerId })
+        .eq('userId', user.id)
+
+      if (updateError) {
+        console.error('Error updating subscription with customer ID:', updateError)
+      }
     }
 
     // Create checkout session
