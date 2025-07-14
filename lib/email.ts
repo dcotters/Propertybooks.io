@@ -1,6 +1,9 @@
 import sgMail from '@sendgrid/mail'
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY!)
+// Only set API key if it exists
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+}
 
 export interface EmailData {
   to: string
@@ -11,9 +14,15 @@ export interface EmailData {
 
 export const sendEmail = async (emailData: EmailData) => {
   try {
+    // Check if SendGrid is configured
+    if (!process.env.SENDGRID_API_KEY || !process.env.SENDGRID_FROM_EMAIL) {
+      console.log('SendGrid not configured, skipping email:', emailData.subject, 'to:', emailData.to)
+      return { success: true, skipped: true }
+    }
+
     const msg = {
       to: emailData.to,
-      from: process.env.SENDGRID_FROM_EMAIL!,
+      from: process.env.SENDGRID_FROM_EMAIL,
       subject: emailData.subject,
       text: emailData.text || '',
       html: emailData.html || '',

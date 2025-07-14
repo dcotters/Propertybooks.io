@@ -9,9 +9,11 @@ import {
   HomeIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline'
+import { useSession, signOut } from 'next-auth/react'
 
 export default function Navigation() {
   const pathname = usePathname()
+  const { data: session } = useSession()
 
   const isActive = (path: string) => {
     return pathname === path
@@ -59,15 +61,26 @@ export default function Navigation() {
               <ChartBarIcon className="h-4 w-4 mr-1" />
               Dashboard
             </Link>
-            <Link 
-              href="/auth/signin" 
-              className="text-gray-600 hover:text-gray-900 py-2 px-1 font-medium"
-            >
-              Sign In
-            </Link>
-            <Link href="/auth/signup" className="btn-primary">
-              Get Started
-            </Link>
+            {session?.user ? (
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                className="px-4 py-2 bg-red-500 text-white rounded font-medium hover:bg-red-600 transition"
+              >
+                Log Out
+              </button>
+            ) : (
+              <>
+                <Link 
+                  href="/auth/signin" 
+                  className="text-gray-600 hover:text-gray-900 py-2 px-1 font-medium"
+                >
+                  Sign In
+                </Link>
+                <Link href="/auth/signup" className="btn-primary">
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
