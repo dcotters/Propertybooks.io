@@ -10,6 +10,8 @@ import {
   ChartBarIcon
 } from '@heroicons/react/24/outline'
 import { useSession, signOut } from 'next-auth/react'
+import { Menu } from '@headlessui/react'
+import { UserCircleIcon } from '@heroicons/react/24/solid'
 
 export default function Navigation() {
   const pathname = usePathname()
@@ -61,14 +63,7 @@ export default function Navigation() {
               <ChartBarIcon className="h-4 w-4 mr-1" />
               Dashboard
             </Link>
-            {session?.user ? (
-              <button
-                onClick={() => signOut({ callbackUrl: '/' })}
-                className="px-4 py-2 bg-red-500 text-white rounded font-medium hover:bg-red-600 transition"
-              >
-                Log Out
-              </button>
-            ) : (
+            {!session?.user && (
               <>
                 <Link 
                   href="/auth/signin" 
@@ -82,6 +77,49 @@ export default function Navigation() {
               </>
             )}
           </div>
+
+          {/* User avatar and dropdown */}
+          {session?.user ? (
+            <Menu as="div" className="relative ml-4">
+              <Menu.Button className="flex items-center focus:outline-none">
+                {session.user.image ? (
+                  <img
+                    src={session.user.image}
+                    alt="User avatar"
+                    className="h-9 w-9 rounded-full border border-gray-300"
+                  />
+                ) : (
+                  <div className="h-9 w-9 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold text-lg">
+                    {session.user.name ? session.user.name[0] : <UserCircleIcon className="h-7 w-7" />}
+                  </div>
+                )}
+              </Menu.Button>
+              <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg focus:outline-none z-50">
+                <div className="py-1">
+                  <Menu.Item>
+                    {({ active }) => (
+                      <Link
+                        href="/settings"
+                        className={`block px-4 py-2 text-sm text-gray-700 ${active ? 'bg-gray-100' : ''}`}
+                      >
+                        Profile
+                      </Link>
+                    )}
+                  </Menu.Item>
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        onClick={() => signOut({ callbackUrl: '/' })}
+                        className={`block w-full text-left px-4 py-2 text-sm text-red-600 ${active ? 'bg-gray-100' : ''}`}
+                      >
+                        Log Out
+                      </button>
+                    )}
+                  </Menu.Item>
+                </div>
+              </Menu.Items>
+            </Menu>
+          ) : null}
 
           {/* Mobile menu button */}
           <div className="md:hidden">
