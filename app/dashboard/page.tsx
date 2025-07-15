@@ -1438,9 +1438,8 @@ export default function Dashboard() {
                   )}
                 </div>
               )}
-            </div>
-          </motion.div>
-        </div>
+            </motion.div>
+          </div>
         )}
 
         {selectedTab === 'taxes' && (
