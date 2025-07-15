@@ -34,6 +34,9 @@ const handler = NextAuth({
           .eq('email', credentials.email)
           .single()
 
+        console.log('NextAuth - Supabase query result - User:', JSON.stringify(user, null, 2))
+        console.log('NextAuth - Supabase query result - Error:', error)
+
         if (error || !user || !user.password) {
           console.log('NextAuth - User not found or error:', error)
           return null
@@ -50,6 +53,13 @@ const handler = NextAuth({
         }
 
         console.log('NextAuth - User authorized:', user.id)
+        console.log('NextAuth - Returning user object:', JSON.stringify({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        }, null, 2))
+        
         return {
           id: user.id,
           email: user.email,
@@ -76,16 +86,28 @@ const handler = NextAuth({
         token.id = user.id
         console.log('JWT Callback - Setting user ID:', user.id)
       }
+      
+      // Always ensure the ID is present in the token
+      if (!token.id && user?.id) {
+        token.id = user.id
+        console.log('JWT Callback - Setting user ID from user object:', user.id)
+      }
+      
+      console.log('JWT Callback - Final token:', JSON.stringify(token, null, 2))
       return token
     },
     async session({ session, token }) {
       console.log('Session Callback - Session:', JSON.stringify(session, null, 2))
       console.log('Session Callback - Token:', JSON.stringify(token, null, 2))
       
-      if (token) {
+      if (token?.id) {
         session.user.id = token.id as string
         console.log('Session Callback - Setting session user ID:', token.id)
+      } else {
+        console.log('Session Callback - No token ID found!')
       }
+      
+      console.log('Session Callback - Final session:', JSON.stringify(session, null, 2))
       return session
     },
     async signIn({ user, account, profile }) {
