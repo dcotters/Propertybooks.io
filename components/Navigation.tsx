@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BuildingOfficeIcon, CalculatorIcon } from '@heroicons/react/24/outline'
+import { BuildingOfficeIcon, CalculatorIcon, ArrowRightIcon, CogIcon, UserIcon, DocumentTextIcon, ChartBarIcon } from '@heroicons/react/24/outline'
 import { useSession, signOut } from 'next-auth/react'
 import { Menu } from '@headlessui/react'
 import { UserCircleIcon } from '@heroicons/react/24/solid'
@@ -18,7 +18,7 @@ export default function Navigation() {
     <nav className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
             <BuildingOfficeIcon className="h-8 w-8 text-primary-600" />
             <span className="ml-2 text-xl font-bold text-gray-900">PropertyBooks.io</span>
           </Link>
@@ -58,7 +58,13 @@ export default function Navigation() {
               </>
             )}
             {session?.user && (
-              <></> // No extra links for logged-in users; all app navigation is in sidebar
+              <Link 
+                href="/dashboard" 
+                className="btn-primary flex items-center"
+              >
+                <ArrowRightIcon className="h-4 w-4 mr-1" />
+                Go to App
+              </Link>
             )}
           </div>
 
@@ -78,24 +84,94 @@ export default function Navigation() {
                   </div>
                 )}
               </Menu.Button>
-              <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg focus:outline-none z-50">
-                <div className="py-1">
+              <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right bg-white border border-gray-200 rounded-lg shadow-lg focus:outline-none z-50">
+                <div className="py-2">
+                  <div className="px-4 py-2 border-b border-gray-100">
+                    <p className="text-sm font-medium text-gray-900">{session.user.name || 'User'}</p>
+                    <p className="text-xs text-gray-500">{session.user.email}</p>
+                  </div>
+                  
                   <Menu.Item>
                     {({ active }) => (
                       <Link
-                        href="/settings"
-                        className={`block px-4 py-2 text-sm text-gray-700 ${active ? 'bg-gray-100' : ''}`}
+                        href="/dashboard"
+                        className={`flex items-center px-4 py-2 text-sm text-gray-700 ${active ? 'bg-gray-100' : ''}`}
                       >
-                        Profile
+                        <ChartBarIcon className="h-4 w-4 mr-3" />
+                        Dashboard
                       </Link>
                     )}
                   </Menu.Item>
+                  
+                  <Menu.Item>
+                    {({ active }) => (
+                      <Link
+                        href="/dashboard?tab=properties"
+                        className={`flex items-center px-4 py-2 text-sm text-gray-700 ${active ? 'bg-gray-100' : ''}`}
+                      >
+                        <BuildingOfficeIcon className="h-4 w-4 mr-3" />
+                        Properties
+                      </Link>
+                    )}
+                  </Menu.Item>
+                  
+                  <Menu.Item>
+                    {({ active }) => (
+                      <Link
+                        href="/dashboard?tab=transactions"
+                        className={`flex items-center px-4 py-2 text-sm text-gray-700 ${active ? 'bg-gray-100' : ''}`}
+                      >
+                        <DocumentTextIcon className="h-4 w-4 mr-3" />
+                        Transactions
+                      </Link>
+                    )}
+                  </Menu.Item>
+                  
+                  <Menu.Item>
+                    {({ active }) => (
+                      <Link
+                        href="/dashboard?tab=reports"
+                        className={`flex items-center px-4 py-2 text-sm text-gray-700 ${active ? 'bg-gray-100' : ''}`}
+                      >
+                        <ChartBarIcon className="h-4 w-4 mr-3" />
+                        Reports
+                      </Link>
+                    )}
+                  </Menu.Item>
+                  
+                  <Menu.Item>
+                    {({ active }) => (
+                      <Link
+                        href="/dashboard?tab=taxes"
+                        className={`flex items-center px-4 py-2 text-sm text-gray-700 ${active ? 'bg-gray-100' : ''}`}
+                      >
+                        <DocumentTextIcon className="h-4 w-4 mr-3" />
+                        Tax Insights
+                      </Link>
+                    )}
+                  </Menu.Item>
+                  
+                  <div className="border-t border-gray-100 my-1"></div>
+                  
+                  <Menu.Item>
+                    {({ active }) => (
+                      <Link
+                        href="/pricing"
+                        className={`flex items-center px-4 py-2 text-sm text-gray-700 ${active ? 'bg-gray-100' : ''}`}
+                      >
+                        <CogIcon className="h-4 w-4 mr-3" />
+                        Pricing & Plans
+                      </Link>
+                    )}
+                  </Menu.Item>
+                  
                   <Menu.Item>
                     {({ active }) => (
                       <button
                         onClick={() => signOut({ callbackUrl: '/' })}
-                        className={`block w-full text-left px-4 py-2 text-sm text-red-600 ${active ? 'bg-gray-100' : ''}`}
+                        className={`flex items-center w-full text-left px-4 py-2 text-sm text-red-600 ${active ? 'bg-gray-100' : ''}`}
                       >
+                        <UserIcon className="h-4 w-4 mr-3" />
                         Log Out
                       </button>
                     )}

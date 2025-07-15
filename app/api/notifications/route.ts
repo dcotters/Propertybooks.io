@@ -39,9 +39,12 @@ export async function PUT(request: NextRequest) {
 
     const { notificationId, read } = await request.json()
 
-    // In a real app, you'd update the notification in the database
-    // For now, we'll just return success
-    return NextResponse.json({ success: true })
+    // For now, we'll store read status in a simple way
+    // In a real app, you'd have a notifications table with read status
+    // For demo purposes, we'll just return success
+    console.log(`Marking notification ${notificationId} as ${read ? 'read' : 'unread'}`)
+    
+    return NextResponse.json({ success: true, notificationId, read })
   } catch (error) {
     console.error('Error updating notification:', error)
     return NextResponse.json({ error: 'Failed to update notification' }, { status: 500 })

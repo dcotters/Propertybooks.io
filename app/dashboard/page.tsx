@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 import { 
   HomeIcon, 
   CurrencyDollarIcon,
@@ -16,12 +17,15 @@ import {
   BellIcon,
   MagnifyingGlassIcon,
   XMarkIcon,
-  PhotoIcon
+  PhotoIcon,
+  UserIcon
 } from '@heroicons/react/24/outline'
 import { Modal } from '../../components/ai/AIAnalysisPanel'
 import { useTabContext } from '../../components/providers/TabProvider'
 import PropertyEditModal from '../../components/PropertyEditModal'
 import TaxInsightsPage from '../../components/TaxInsightsPage'
+import { Menu } from '@headlessui/react'
+import { useSession, signOut } from 'next-auth/react'
 
 interface Property {
   id: string
@@ -110,7 +114,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
-  const [userSettings, setUserSettings] = useState<any>(null)
   const [reportData, setReportData] = useState<any>(null)
   const [reportType, setReportType] = useState('income-statement')
   const [reportLoading, setReportLoading] = useState(false)
@@ -194,10 +197,7 @@ export default function Dashboard() {
         setNotifications(notificationsData)
       }
 
-      if (settingsRes.ok) {
-        const settingsData = await settingsRes.json()
-        setUserSettings(settingsData)
-      }
+
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -371,27 +371,7 @@ export default function Dashboard() {
     }
   }
 
-  const handleSettingsUpdate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      const response = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userSettings),
-        credentials: 'include',
-      })
 
-      if (response.ok) {
-        const updatedSettings = await response.json()
-        setUserSettings(updatedSettings)
-        setShowSettingsModal(false)
-      }
-    } catch (error) {
-      console.error('Error updating settings:', error)
-    }
-  }
 
   const markNotificationAsRead = async (notificationId: string) => {
     try {
@@ -629,10 +609,10 @@ export default function Dashboard() {
       <nav className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
+            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
               <HomeIcon className="h-8 w-8 text-primary-600" />
               <span className="ml-2 text-xl font-bold text-gray-900">PropertyBooks.io</span>
-            </div>
+            </Link>
             <div className="flex items-center space-x-4">
               <button 
                 onClick={() => setShowNotificationsModal(true)}
@@ -645,17 +625,45 @@ export default function Dashboard() {
                   </span>
                 )}
               </button>
-              <button 
-                onClick={() => setShowSettingsModal(true)}
-                className="p-2 text-gray-400 hover:text-gray-500"
-              >
-                <CogIcon className="h-6 w-6" />
-              </button>
-              <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-                <span className="text-white text-sm font-medium">
-                  {userSettings?.name?.charAt(0) || 'U'}
-                </span>
-              </div>
+              <Menu as="div" className="relative">
+                <Menu.Button className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+                  <span className="text-white text-sm font-medium">
+                    D
+                  </span>
+                </Menu.Button>
+                <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right bg-white border border-gray-200 rounded-lg shadow-lg focus:outline-none z-50">
+                  <div className="py-2">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">David</p>
+                      <p className="text-xs text-gray-500">david@example.com</p>
+                    </div>
+                    
+                    <Menu.Item>
+                      {({ active }) => (
+                        <Link
+                          href="/pricing"
+                          className={`flex items-center px-4 py-2 text-sm text-gray-700 ${active ? 'bg-gray-100' : ''}`}
+                        >
+                          <CogIcon className="h-4 w-4 mr-3" />
+                          Pricing & Plans
+                        </Link>
+                      )}
+                    </Menu.Item>
+                    
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          onClick={() => signOut({ callbackUrl: '/' })}
+                          className={`flex items-center w-full text-left px-4 py-2 text-sm text-red-600 ${active ? 'bg-gray-100' : ''}`}
+                        >
+                          <UserIcon className="h-4 w-4 mr-3" />
+                          Log Out
+                        </button>
+                      )}
+                    </Menu.Item>
+                  </div>
+                </Menu.Items>
+              </Menu>
             </div>
           </div>
         </div>
@@ -2073,62 +2081,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Settings Modal */}
-      {showSettingsModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Settings</h3>
-                <button
-                  onClick={() => setShowSettingsModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <XMarkIcon className="h-6 w-6" />
-                </button>
-              </div>
-              
-              <form onSubmit={handleSettingsUpdate} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <input
-                    type="text"
-                    value={userSettings?.name || ''}
-                    onChange={(e) => setUserSettings({...userSettings, name: e.target.value})}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <input
-                    type="email"
-                    value={userSettings?.email || ''}
-                    onChange={(e) => setUserSettings({...userSettings, email: e.target.value})}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowSettingsModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Notifications Modal */}
       {showNotificationsModal && (
