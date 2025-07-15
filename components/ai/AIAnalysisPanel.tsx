@@ -130,7 +130,7 @@ export default function AIAnalysisPanel() {
         </div>
       )}
       <button
-        className="bg-indigo-600 text-white px-4 py-2 rounded font-semibold disabled:opacity-50"
+        className="bg-primary-600 text-white px-4 py-2 rounded font-semibold disabled:opacity-50 hover:bg-primary-700 transition-colors"
         onClick={handleAnalyze}
         disabled={loading || !text || (mode === 'qa' && !question)}
       >

@@ -18,7 +18,7 @@ import {
   XMarkIcon,
   PhotoIcon
 } from '@heroicons/react/24/outline'
-import AIAnalysisPanel, { Modal } from '../../components/ai/AIAnalysisPanel'
+import { Modal } from '../../components/ai/AIAnalysisPanel'
 import { useTabContext } from '../../components/providers/TabProvider'
 import PropertyEditModal from '../../components/PropertyEditModal'
 import TaxInsightsPage from '../../components/TaxInsightsPage'
@@ -156,6 +156,11 @@ export default function Dashboard() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showEditPropertyModal, setShowEditPropertyModal] = useState(false)
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+  const [overviewInsights, setOverviewInsights] = useState<string>('')
+  const [propertiesInsights, setPropertiesInsights] = useState<string>('')
+  const [transactionsInsights, setTransactionsInsights] = useState<string>('')
+  const [reportsInsights, setReportsInsights] = useState<string>('')
+  const [insightsLoading, setInsightsLoading] = useState(false)
   const { selectedTab, setSelectedTab } = useTabContext();
 
   // Fetch real data on component mount
@@ -471,6 +476,141 @@ export default function Dashboard() {
     setShowEditPropertyModal(false)
     setSelectedProperty(null)
   }
+
+  const generateOverviewInsights = async () => {
+    setInsightsLoading(true)
+    try {
+      const response = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          mode: 'portfolio_insights',
+          properties: properties,
+          transactions: transactions,
+          summary: {
+            totalProperties: properties.length,
+            totalIncome: transactions.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + Number(t.amount), 0),
+            totalExpenses: transactions.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + Number(t.amount), 0),
+            monthlyIncome: properties.reduce((sum, p) => sum + (p.monthlyRent || 0), 0),
+            occupancyRate: properties.length > 0 ? (properties.reduce((sum, p) => sum + (p.occupiedUnits || 0), 0) / properties.reduce((sum, p) => sum + (p.units || 1), 0)) * 100 : 0
+          }
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setOverviewInsights(data.result)
+      }
+    } catch (error) {
+      console.error('Error generating insights:', error)
+    } finally {
+      setInsightsLoading(false)
+    }
+  }
+
+  const generateTransactionsInsights = async () => {
+    setInsightsLoading(true)
+    try {
+      const response = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          mode: 'transaction_analysis',
+          transactions: transactions,
+          properties: properties,
+          summary: {
+            totalTransactions: transactions.length,
+            totalIncome: transactions.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + Number(t.amount), 0),
+            totalExpenses: transactions.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + Number(t.amount), 0),
+            averageTransaction: transactions.length > 0 ? transactions.reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0) / transactions.length : 0,
+            topCategories: Object.entries(
+              transactions.reduce((acc, t) => {
+                acc[t.category] = (acc[t.category] || 0) + Math.abs(Number(t.amount))
+                return acc
+              }, {} as Record<string, number>)
+            ).sort(([,a], [,b]) => b - a).slice(0, 5)
+          }
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setTransactionsInsights(data.result)
+      }
+    } catch (error) {
+      console.error('Error generating transaction insights:', error)
+    } finally {
+      setInsightsLoading(false)
+    }
+  }
+
+  const generateReportsInsights = async () => {
+    setInsightsLoading(true)
+    try {
+      const response = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          mode: 'report_analysis',
+          properties: properties,
+          transactions: transactions,
+          reportData: reportData,
+          summary: {
+            totalProperties: properties.length,
+            totalTransactions: transactions.length,
+            totalIncome: transactions.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + Number(t.amount), 0),
+            totalExpenses: transactions.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + Number(t.amount), 0),
+            monthlyIncome: properties.reduce((sum, p) => sum + (p.monthlyRent || 0), 0),
+            netIncome: transactions.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + Number(t.amount), 0) - 
+                      transactions.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + Number(t.amount), 0)
+          }
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setReportsInsights(data.result)
+      }
+    } catch (error) {
+      console.error('Error generating report insights:', error)
+    } finally {
+      setInsightsLoading(false)
+    }
+  }
+
+  const generatePropertiesInsights = async () => {
+    setInsightsLoading(true)
+    try {
+      const response = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          mode: 'property_analysis',
+          properties: properties,
+          transactions: transactions.filter(t => t.propertyId),
+          summary: {
+            totalProperties: properties.length,
+            averageRent: properties.length > 0 ? properties.reduce((sum, p) => sum + (p.monthlyRent || 0), 0) / properties.length : 0,
+            totalValue: properties.reduce((sum, p) => sum + (p.estimatedValue || 0), 0),
+            occupancyRate: properties.length > 0 ? (properties.reduce((sum, p) => sum + (p.occupiedUnits || 0), 0) / properties.reduce((sum, p) => sum + (p.units || 1), 0)) * 100 : 0
+          }
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setPropertiesInsights(data.result)
+      }
+    } catch (error) {
+      console.error('Error generating property insights:', error)
+    } finally {
+      setInsightsLoading(false)
+    }
+  }
   // TODO: Add document limit check if needed
 
   if (loading) {
@@ -668,11 +808,78 @@ export default function Dashboard() {
               )}
             </motion.div>
 
-            {/* Recent Transactions */}
+            {/* AI Portfolio Insights */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
+              className="card"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <div className="bg-blue-100 p-2 rounded-lg mr-3">
+                    <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">AI Portfolio Insights</h2>
+                </div>
+                <button 
+                  onClick={generateOverviewInsights}
+                  disabled={insightsLoading}
+                  className="btn-primary flex items-center"
+                >
+                  {insightsLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                      Get Insights
+                    </>
+                  )}
+                </button>
+              </div>
+              
+              {!overviewInsights ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">🤖</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">AI Portfolio Analysis</h3>
+                  <p className="text-gray-600 mb-4">Get intelligent insights about your portfolio performance, trends, and recommendations</p>
+                  <button 
+                    onClick={generateOverviewInsights}
+                    disabled={insightsLoading}
+                    className="btn-primary"
+                  >
+                    Generate AI Insights
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                  <div className="flex items-center mb-4">
+                    <svg className="h-5 w-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 className="text-lg font-semibold text-blue-900">AI Analysis</h3>
+                  </div>
+                  <div className="prose prose-blue max-w-none">
+                    <div className="whitespace-pre-wrap text-blue-800 leading-relaxed">
+                      {overviewInsights}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Recent Transactions */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
               className="card"
             >
               <div className="flex items-center justify-between mb-6">
@@ -718,22 +925,91 @@ export default function Dashboard() {
         )}
 
         {selectedTab === 'properties' && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="card"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">All Properties</h2>
-              <button 
-                onClick={() => setShowAddPropertyModal(true)}
-                className="btn-primary flex items-center"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Add Property
-              </button>
-            </div>
+          <div className="space-y-6">
+            {/* AI Property Insights */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="card"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <div className="bg-green-100 p-2 rounded-lg mr-3">
+                    <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">AI Property Analysis</h2>
+                </div>
+                <button 
+                  onClick={generatePropertiesInsights}
+                  disabled={insightsLoading}
+                  className="btn-primary flex items-center"
+                >
+                  {insightsLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                      Analyze Properties
+                    </>
+                  )}
+                </button>
+              </div>
+              
+              {!propertiesInsights ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">🏠</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Property Performance Analysis</h3>
+                  <p className="text-gray-600 mb-4">Get AI-powered insights about your property performance, market analysis, and optimization recommendations</p>
+                  <button 
+                    onClick={generatePropertiesInsights}
+                    disabled={insightsLoading}
+                    className="btn-primary"
+                  >
+                    Analyze Properties
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                  <div className="flex items-center mb-4">
+                    <svg className="h-5 w-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 className="text-lg font-semibold text-green-900">Property Analysis</h3>
+                  </div>
+                  <div className="prose prose-green max-w-none">
+                    <div className="whitespace-pre-wrap text-green-800 leading-relaxed">
+                      {propertiesInsights}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Properties List */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="card"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">All Properties</h2>
+                <button 
+                  onClick={() => setShowAddPropertyModal(true)}
+                  className="btn-primary flex items-center"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Add Property
+                </button>
+              </div>
             
             {properties.length === 0 ? (
               <div className="text-center py-12">
@@ -798,25 +1074,95 @@ export default function Dashboard() {
               </div>
             )}
           </motion.div>
+        </div>
         )}
 
         {selectedTab === 'transactions' && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="card"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900">All Transactions</h2>
-              <button 
-                onClick={() => setShowAddTransactionModal(true)}
-                className="btn-primary flex items-center"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Add Transaction
-              </button>
-            </div>
+          <div className="space-y-6">
+            {/* AI Transaction Insights */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="card"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <div className="bg-purple-100 p-2 rounded-lg mr-3">
+                    <svg className="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">AI Transaction Analysis</h2>
+                </div>
+                <button 
+                  onClick={generateTransactionsInsights}
+                  disabled={insightsLoading}
+                  className="btn-primary flex items-center"
+                >
+                  {insightsLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                      Analyze Transactions
+                    </>
+                  )}
+                </button>
+              </div>
+              
+              {!transactionsInsights ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">💳</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Transaction Pattern Analysis</h3>
+                  <p className="text-gray-600 mb-4">Get AI-powered insights about your spending patterns, income trends, and financial optimization</p>
+                  <button 
+                    onClick={generateTransactionsInsights}
+                    disabled={insightsLoading}
+                    className="btn-primary"
+                  >
+                    Analyze Transactions
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+                  <div className="flex items-center mb-4">
+                    <svg className="h-5 w-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 className="text-lg font-semibold text-purple-900">Transaction Analysis</h3>
+                  </div>
+                  <div className="prose prose-purple max-w-none">
+                    <div className="whitespace-pre-wrap text-purple-800 leading-relaxed">
+                      {transactionsInsights}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Transactions List */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="card"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">All Transactions</h2>
+                <button 
+                  onClick={() => setShowAddTransactionModal(true)}
+                  className="btn-primary flex items-center"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Add Transaction
+                </button>
+              </div>
             
             {transactions.length === 0 ? (
               <div className="text-center py-12">
@@ -901,16 +1247,85 @@ export default function Dashboard() {
               </div>
             )}
           </motion.div>
+        </div>
         )}
 
         {selectedTab === 'reports' && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="space-y-6"
-          >
-            <div className="card">
+          <div className="space-y-6">
+            {/* AI Report Insights */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="card"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <div className="bg-orange-100 p-2 rounded-lg mr-3">
+                    <svg className="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">AI Financial Analysis</h2>
+                </div>
+                <button 
+                  onClick={generateReportsInsights}
+                  disabled={insightsLoading}
+                  className="btn-primary flex items-center"
+                >
+                  {insightsLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                      Analyze Reports
+                    </>
+                  )}
+                </button>
+              </div>
+              
+              {!reportsInsights ? (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-4">📊</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Financial Performance Analysis</h3>
+                  <p className="text-gray-600 mb-4">Get AI-powered insights about your financial performance, trends, and optimization opportunities</p>
+                  <button 
+                    onClick={generateReportsInsights}
+                    disabled={insightsLoading}
+                    className="btn-primary"
+                  >
+                    Analyze Financial Data
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                  <div className="flex items-center mb-4">
+                    <svg className="h-5 w-5 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 className="text-lg font-semibold text-orange-900">Financial Analysis</h3>
+                  </div>
+                  <div className="prose prose-orange max-w-none">
+                    <div className="whitespace-pre-wrap text-orange-800 leading-relaxed">
+                      {reportsInsights}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Reports List */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="card"
+            >
               <h2 className="text-xl font-bold text-gray-900 mb-6">Financial Reports</h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 <button 
@@ -1026,13 +1441,12 @@ export default function Dashboard() {
               )}
             </div>
           </motion.div>
+        </div>
         )}
 
         {selectedTab === 'taxes' && (
           <TaxInsightsPage />
         )}
-        
-        <AIAnalysisPanel />
       </div>
 
       {/* Add Property Modal */}
