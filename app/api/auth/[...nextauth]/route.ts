@@ -4,6 +4,10 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { supabase } from "../../../../lib/supabase"
 import bcrypt from "bcryptjs"
 
+console.log('NextAuth Config - NEXTAUTH_URL:', process.env.NEXTAUTH_URL)
+console.log('NextAuth Config - NEXTAUTH_SECRET exists:', !!process.env.NEXTAUTH_SECRET)
+console.log('NextAuth Config - NODE_ENV:', process.env.NODE_ENV)
+
 const handler = NextAuth({
   providers: [
     GoogleProvider({
@@ -17,7 +21,10 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
+        console.log('NextAuth - Authorize called with credentials:', credentials?.email)
+        
         if (!credentials?.email || !credentials?.password) {
+          console.log('NextAuth - Missing credentials')
           return null
         }
 
@@ -28,6 +35,7 @@ const handler = NextAuth({
           .single()
 
         if (error || !user || !user.password) {
+          console.log('NextAuth - User not found or error:', error)
           return null
         }
 
@@ -37,9 +45,11 @@ const handler = NextAuth({
         )
 
         if (!isPasswordValid) {
+          console.log('NextAuth - Invalid password')
           return null
         }
 
+        console.log('NextAuth - User authorized:', user.id)
         return {
           id: user.id,
           email: user.email,

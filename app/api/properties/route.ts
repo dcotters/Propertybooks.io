@@ -5,6 +5,19 @@ import { checkSubscriptionStatus, checkUsageLimits } from '../../../lib/subscrip
 
 export async function GET() {
   try {
+    console.log('GET /api/properties - Starting request')
+    
+    // Log all headers to see what's being sent
+    const headers = await import('next/headers')
+    const headersList = headers.headers()
+    console.log('GET /api/properties - All headers:', Object.fromEntries(headersList.entries()))
+    
+    // Check for specific auth headers
+    const authHeader = headersList.get('authorization')
+    const cookieHeader = headersList.get('cookie')
+    console.log('GET /api/properties - Authorization header:', authHeader)
+    console.log('GET /api/properties - Cookie header:', cookieHeader)
+    
     const session = await getServerSession()
     
     console.log('GET /api/properties - Session:', JSON.stringify(session, null, 2))
@@ -34,6 +47,19 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('POST /api/properties - Starting request')
+    
+    // Log all headers to see what's being sent
+    const headers = await import('next/headers')
+    const headersList = headers.headers()
+    console.log('POST /api/properties - All headers:', Object.fromEntries(headersList.entries()))
+    
+    // Check for specific auth headers
+    const authHeader = headersList.get('authorization')
+    const cookieHeader = headersList.get('cookie')
+    console.log('POST /api/properties - Authorization header:', authHeader)
+    console.log('POST /api/properties - Cookie header:', cookieHeader)
+    
     const session = await getServerSession()
     
     console.log('POST /api/properties - Session:', JSON.stringify(session, null, 2))
