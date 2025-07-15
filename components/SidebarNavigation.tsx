@@ -16,11 +16,12 @@ interface SidebarNavigationProps {
 }
 
 const sidebarTabs = [
-  { key: 'overview', label: 'Overview' },
-  { key: 'properties', label: 'Properties' },
-  { key: 'transactions', label: 'Transactions' },
-  { key: 'reports', label: 'Reports' },
-  { key: 'taxes', label: 'Taxes' },
+  { key: 'overview', label: 'Overview', href: '/dashboard' },
+  { key: 'properties', label: 'Properties', href: '/dashboard' },
+  { key: 'transactions', label: 'Transactions', href: '/dashboard' },
+  { key: 'reports', label: 'Reports', href: '/dashboard' },
+  { key: 'taxes', label: 'Taxes', href: '/dashboard' },
+  { key: 'calculator', label: 'Calculator', href: '/calculator' },
 ]
 
 export default function SidebarNavigation() {
@@ -37,6 +38,17 @@ export default function SidebarNavigation() {
       console.error('Logout error:', error)
       setIsLoggingOut(false)
     }
+  }
+
+  // Determine if we're on calculator page
+  const isCalculatorPage = pathname === '/calculator'
+  
+  // For dashboard pages, use selectedTab, for calculator use pathname
+  const getActiveTab = (tab: any) => {
+    if (tab.key === 'calculator') {
+      return isCalculatorPage
+    }
+    return selectedTab === tab.key && !isCalculatorPage
   }
 
   if (status === 'loading') {
@@ -66,19 +78,23 @@ export default function SidebarNavigation() {
         </Link>
       </div>
       <nav className="flex-1 px-4 py-6 space-y-2">
-        {sidebarTabs.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setSelectedTab(tab.key)}
-            className={`flex items-center w-full px-4 py-2 rounded-lg font-medium transition-colors duration-150 text-left ${
-              selectedTab === tab.key
-                ? 'bg-primary-100 text-primary-700 border-l-4 border-primary-500' 
-                : 'text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {sidebarTabs.map(tab => {
+          const isActive = getActiveTab(tab)
+          return (
+            <Link
+              key={tab.key}
+              href={tab.href}
+              onClick={() => tab.key !== 'calculator' && setSelectedTab(tab.key)}
+              className={`flex items-center w-full px-4 py-2 rounded-lg font-medium transition-colors duration-150 text-left ${
+                isActive
+                  ? 'bg-primary-100 text-primary-700 border-l-4 border-primary-500' 
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              {tab.label}
+            </Link>
+          )
+        })}
       </nav>
       <div className="mt-auto px-4 pb-6">
         {session?.user && (
