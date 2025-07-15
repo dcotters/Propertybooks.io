@@ -245,8 +245,8 @@ async function generateIncomeStatement(properties: any[], transactions: any[], u
       total: Math.round(totalExpenses),
       byCategory: Object.entries(expensesByCategory).map(([category, amount]) => ({
         category,
-        amount: Math.round(amount),
-        percentage: Math.round((amount / totalExpenses) * 100 * 100) / 100
+        amount: Math.round(amount as number),
+        percentage: Math.round(((amount as number) / totalExpenses) * 100 * 100) / 100
       })).sort((a, b) => b.amount - a.amount),
       breakdown: expenseTransactions.map(t => ({
         date: t.date,
