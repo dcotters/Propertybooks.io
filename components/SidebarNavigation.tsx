@@ -20,6 +20,7 @@ const sidebarTabs = [
   { key: 'properties', label: 'Properties' },
   { key: 'transactions', label: 'Transactions' },
   { key: 'reports', label: 'Reports' },
+  { key: 'taxes', label: 'Taxes' },
 ]
 
 export default function SidebarNavigation() {
@@ -93,7 +94,7 @@ export default function SidebarNavigation() {
                     />
                   ) : (
                     <div className="h-10 w-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold text-lg">
-                      {session.user.name ? session.user.name[0] : <UserCircleIcon className="h-7 w-7" />}
+                      {session.user.name ? session.user.name.charAt(0).toUpperCase() : <UserCircleIcon className="h-7 w-7" />}
                     </div>
                   )}
                   <span className="ml-3 text-gray-900 font-semibold truncate flex-1 text-left">

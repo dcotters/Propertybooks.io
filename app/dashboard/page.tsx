@@ -20,6 +20,8 @@ import {
 } from '@heroicons/react/24/outline'
 import AIAnalysisPanel, { Modal } from '../../components/ai/AIAnalysisPanel'
 import { useTabContext } from '../../components/providers/TabProvider'
+import PropertyEditModal from '../../components/PropertyEditModal'
+import TaxInsightsPage from '../../components/TaxInsightsPage'
 
 interface Property {
   id: string
@@ -27,14 +29,21 @@ interface Property {
   address: string
   city: string
   state: string
+  country: string
   zipCode: string
   propertyType: string
   purchasePrice: number
   purchaseDate: string
-  units?: number
+  units: number
   occupiedUnits?: number
-  monthlyRent?: number
-  totalValue?: number
+  monthlyRent: number
+  estimatedValue: number
+  yearBuilt: number
+  squareFootage: number
+  bedrooms: number
+  bathrooms: number
+  parkingSpaces: number
+  description: string
   status?: 'active' | 'maintenance' | 'vacant'
 }
 
@@ -145,6 +154,8 @@ export default function Dashboard() {
     tags: []
   })
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [showEditPropertyModal, setShowEditPropertyModal] = useState(false)
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const { selectedTab, setSelectedTab } = useTabContext();
 
   // Fetch real data on component mount
@@ -443,6 +454,23 @@ export default function Dashboard() {
   // Helper to check free tier limits
   const isAtPropertyLimit = properties.length >= 1
   const isAtTransactionLimit = transactions.length >= 10
+
+  const handleEditProperty = (property: Property) => {
+    setSelectedProperty(property)
+    setShowEditPropertyModal(true)
+  }
+
+  const handlePropertyUpdate = (updatedProperty: Property) => {
+    setProperties(prev => prev.map(p => p.id === updatedProperty.id ? updatedProperty : p))
+    setShowEditPropertyModal(false)
+    setSelectedProperty(null)
+  }
+
+  const handlePropertyDelete = (propertyId: string) => {
+    setProperties(prev => prev.filter(p => p.id !== propertyId))
+    setShowEditPropertyModal(false)
+    setSelectedProperty(null)
+  }
   // TODO: Add document limit check if needed
 
   if (loading) {
@@ -613,9 +641,20 @@ export default function Dashboard() {
                     <div key={property.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-gray-900">{property.name}</h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(property.status || 'active')}`}>
-                          {property.status || 'active'}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(property.status || 'active')}`}>
+                            {property.status || 'active'}
+                          </span>
+                          <button
+                            onClick={() => handleEditProperty(property)}
+                            className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                            title="Edit Property"
+                          >
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                       <p className="text-gray-600 mb-2">{property.address}</p>
                       <p className="text-gray-600 mb-4">{property.city}, {property.state} {property.zipCode}</p>
@@ -988,6 +1027,11 @@ export default function Dashboard() {
             </div>
           </motion.div>
         )}
+
+        {selectedTab === 'taxes' && (
+          <TaxInsightsPage />
+        )}
+        
         <AIAnalysisPanel />
       </div>
 
@@ -1732,6 +1776,18 @@ export default function Dashboard() {
         <p className="mb-4">You've reached the free tier limit. Upgrade to add more properties, transactions, or documents.</p>
         <a href="/pricing" className="btn-primary w-full block text-center">See Pricing & Upgrade</a>
       </Modal>
+
+      {/* Property Edit Modal */}
+      <PropertyEditModal
+        property={selectedProperty}
+        isOpen={showEditPropertyModal}
+        onClose={() => {
+          setShowEditPropertyModal(false)
+          setSelectedProperty(null)
+        }}
+        onSave={handlePropertyUpdate}
+        onDelete={handlePropertyDelete}
+      />
     </div>
   )
 } 
