@@ -157,10 +157,10 @@ export default function Dashboard() {
       setLoading(true)
       // Fetch properties, transactions, notifications, and settings
       const [propertiesRes, transactionsRes, notificationsRes, settingsRes] = await Promise.all([
-        fetch('/api/properties'),
-        fetch('/api/transactions'),
-        fetch('/api/notifications'),
-        fetch('/api/settings')
+        fetch('/api/properties', { credentials: 'include' }),
+        fetch('/api/transactions', { credentials: 'include' }),
+        fetch('/api/notifications', { credentials: 'include' }),
+        fetch('/api/settings', { credentials: 'include' })
       ])
       
       if (propertiesRes.ok) {
@@ -208,6 +208,7 @@ export default function Dashboard() {
           units: parseInt(propertyForm.units),
           monthlyRent: propertyForm.monthlyRent ? parseFloat(propertyForm.monthlyRent) : undefined
         }),
+        credentials: 'include',
       })
 
       if (response.ok) {
@@ -272,7 +273,8 @@ export default function Dashboard() {
         
         const uploadResponse = await fetch('/api/upload', {
           method: 'POST',
-          body: formData
+          body: formData,
+          credentials: 'include',
         })
         
         if (uploadResponse.ok) {
@@ -291,6 +293,7 @@ export default function Dashboard() {
           amount: parseFloat(transactionForm.amount),
           receiptUrl
         }),
+        credentials: 'include',
       })
 
       if (response.ok) {
@@ -339,7 +342,7 @@ export default function Dashboard() {
   const generateReport = async (type: string) => {
     try {
       setReportLoading(true)
-      const response = await fetch(`/api/reports?type=${type}`)
+      const response = await fetch(`/api/reports?type=${type}`, { credentials: 'include' })
       if (response.ok) {
         const data = await response.json()
         setReportData(data)
@@ -361,6 +364,7 @@ export default function Dashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(userSettings),
+        credentials: 'include',
       })
 
       if (response.ok) {
@@ -381,6 +385,7 @@ export default function Dashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ notificationId, read: true }),
+        credentials: 'include',
       })
       
       // Update local state
