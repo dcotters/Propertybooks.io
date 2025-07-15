@@ -168,7 +168,20 @@ export default function Navigation() {
                       <Menu.Item>
                         {({ active }) => (
                           <button
-                            onClick={() => signOut({ callbackUrl: '/' })}
+                            onClick={async () => {
+                              try {
+                                await signOut({ 
+                                  callbackUrl: '/',
+                                  redirect: false 
+                                })
+                                // Force a hard refresh to clear any cached session data
+                                window.location.href = '/'
+                              } catch (error) {
+                                console.error('Logout error:', error)
+                                // Force redirect to home page
+                                window.location.href = '/'
+                              }
+                            }}
                             className={`flex items-center w-full text-left px-4 py-2 text-sm text-red-600 ${active ? 'bg-gray-100' : ''}`}
                           >
                             <UserIcon className="h-4 w-4 mr-3" />
