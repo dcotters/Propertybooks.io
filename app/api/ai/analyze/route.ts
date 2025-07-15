@@ -1,46 +1,113 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../../../../lib/auth'
+import { supabase } from '../../../../lib/supabase'
+import { analyzeProperty } from '../../../../lib/ai-analysis'
 
 export async function POST(request: NextRequest) {
-  const { text, question, mode, autoData } = await request.json()
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-  let prompt = ''
-  if (mode === 'summary') {
-    prompt = `Summarize this for a landlord's accounting: ${text}`
-  } else if (mode === 'categorize') {
-    prompt = `Categorize the following transaction or expense for landlord accounting. Return only the category name.\nText: ${text}`
-  } else if (mode === 'anomaly') {
-    prompt = `Analyze the following transactions and flag any unusual or suspicious activity.\n${text}`
-  } else if (mode === 'tax_tips') {
-    prompt = `Based on this data, provide personalized tax optimization tips for a landlord.\n${text}`
-  } else if (mode === 'qa' && question) {
-    prompt = `Answer the following question based on the user's data.\nData: ${text}\nQuestion: ${question}`
-  } else if (mode === 'auto_analyze') {
-    prompt = `Analyze this landlord's property portfolio and provide insights:
+    const body = await request.json()
+    const { propertyId, analysisType } = body
 
-Properties: ${JSON.stringify(autoData?.properties || [])}
-Transactions: ${JSON.stringify(autoData?.transactions || [])}
+    if (!propertyId) {
+      return NextResponse.json({ error: 'Property ID is required' }, { status: 400 })
+    }
 
-Please provide:
-1. Portfolio overview and performance summary
-2. Key insights about income vs expenses
-3. Recommendations for optimization
-4. Potential tax implications
-5. Risk assessment and suggestions
+    // Fetch the property
+    const { data: property, error: propertyError } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('id', propertyId)
+      .eq('userId', session.user.id)
+      .single()
 
-Format your response in a clear, structured way with bullet points and sections.`
-  } else {
-    return NextResponse.json({ error: 'Invalid mode or missing data' }, { status: 400 })
+    if (propertyError || !property) {
+      return NextResponse.json({ error: 'Property not found' }, { status: 404 })
+    }
+
+    // Fetch property transactions for context
+    const { data: transactions } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('propertyId', propertyId)
+      .eq('userId', session.user.id)
+      .order('date', { ascending: false })
+
+    // Calculate monthly expenses from transactions
+    const monthlyExpenses = transactions
+      ?.filter(t => t.type === 'EXPENSE')
+      .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0) / 12 || 0
+
+    // Prepare property data for AI analysis
+    const propertyData = {
+      name: property.name,
+      address: property.address,
+      city: property.city,
+      state: property.state,
+      country: property.country || 'US',
+      propertyType: property.propertyType,
+      purchasePrice: property.purchasePrice,
+      estimatedValue: property.estimatedValue || property.purchasePrice,
+      monthlyRent: property.monthlyRent || 0,
+      yearBuilt: property.yearBuilt || 2000,
+      squareFootage: property.squareFootage || 1000,
+      bedrooms: property.bedrooms || 2,
+      bathrooms: property.bathrooms || 1,
+      units: property.units || 1,
+      monthlyExpenses
+    }
+
+    // Generate AI analysis
+    const analysis = await analyzeProperty(propertyData)
+
+    // Add additional insights based on analysis type
+    let additionalInsights = {}
+    
+    if (analysisType === 'pricing') {
+      additionalInsights = {
+        pricePerSquareFoot: property.squareFootage ? 
+          Math.round(property.estimatedValue / property.squareFootage) : 0,
+        rentToValueRatio: property.estimatedValue ? 
+          Math.round((property.monthlyRent * 12 / property.estimatedValue) * 100 * 100) / 100 : 0,
+        priceToRentRatio: property.monthlyRent ? 
+          Math.round(property.estimatedValue / (property.monthlyRent * 12)) : 0,
+        marketComparison: analysis.pricingInsights.marketComparison
+      }
+    } else if (analysisType === 'investment') {
+      additionalInsights = {
+        totalReturn: property.purchasePrice ? 
+          Math.round(((property.estimatedValue - property.purchasePrice) / property.purchasePrice) * 100 * 100) / 100 : 0,
+        annualAppreciation: property.purchasePrice && property.yearBuilt ? 
+          Math.round(((property.estimatedValue - property.purchasePrice) / (new Date().getFullYear() - property.yearBuilt)) / property.purchasePrice * 100 * 100) / 100 : 0,
+        cashFlow: property.monthlyRent - monthlyExpenses,
+        breakEvenMonths: property.monthlyRent > monthlyExpenses ? 
+          Math.round(property.purchasePrice / (property.monthlyRent - monthlyExpenses)) : 0
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      analysis: {
+        ...analysis,
+        additionalInsights,
+        propertyData,
+        transactionSummary: {
+          totalTransactions: transactions?.length || 0,
+          totalIncome: transactions?.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + Number(t.amount), 0) || 0,
+          totalExpenses: transactions?.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0) || 0,
+          averageMonthlyIncome: transactions?.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + Number(t.amount), 0) / 12 || 0,
+          averageMonthlyExpenses: monthlyExpenses
+        }
+      }
+    })
+  } catch (error) {
+    console.error('Error analyzing property:', error)
+    return NextResponse.json({ error: 'Failed to analyze property' }, { status: 500 })
   }
-
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4',
-    messages: [{ role: 'user', content: prompt }],
-    max_tokens: 500,
-    temperature: 0.2,
-  })
-
-  return NextResponse.json({ result: response.choices[0].message?.content })
 } 
