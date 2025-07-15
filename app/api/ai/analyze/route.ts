@@ -52,8 +52,10 @@ export async function POST(request: NextRequest) {
 
     // Calculate monthly expenses from transactions
     const monthlyExpenses = propertyTransactions
-      ?.filter((t: any) => t.type === 'EXPENSE')
-      .reduce((sum: number, t: any) => sum + Math.abs(Number(t.amount)), 0) / 12 || 0
+      ? propertyTransactions
+          .filter((t: any) => t.type === 'EXPENSE')
+          .reduce((sum: number, t: any) => sum + Math.abs(Number(t.amount)), 0) / 12
+      : 0
 
     // Prepare property data for AI analysis
     const propertyData = {
@@ -110,9 +112,15 @@ export async function POST(request: NextRequest) {
         propertyData,
         transactionSummary: {
           totalTransactions: propertyTransactions?.length || 0,
-          totalIncome: propertyTransactions?.filter((t: any) => t.type === 'INCOME').reduce((sum: number, t: any) => sum + Number(t.amount), 0) || 0,
-          totalExpenses: propertyTransactions?.filter((t: any) => t.type === 'EXPENSE').reduce((sum: number, t: any) => sum + Math.abs(Number(t.amount)), 0) || 0,
-          averageMonthlyIncome: propertyTransactions?.filter((t: any) => t.type === 'INCOME').reduce((sum: number, t: any) => sum + Number(t.amount), 0) / 12 || 0,
+          totalIncome: propertyTransactions 
+            ? propertyTransactions.filter((t: any) => t.type === 'INCOME').reduce((sum: number, t: any) => sum + Number(t.amount), 0)
+            : 0,
+          totalExpenses: propertyTransactions
+            ? propertyTransactions.filter((t: any) => t.type === 'EXPENSE').reduce((sum: number, t: any) => sum + Math.abs(Number(t.amount)), 0)
+            : 0,
+          averageMonthlyIncome: propertyTransactions
+            ? propertyTransactions.filter((t: any) => t.type === 'INCOME').reduce((sum: number, t: any) => sum + Number(t.amount), 0) / 12
+            : 0,
           averageMonthlyExpenses: monthlyExpenses
         }
       }
