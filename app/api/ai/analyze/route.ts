@@ -22,7 +22,12 @@ export async function POST(request: NextRequest) {
 
     // Handle different analysis modes
     if (mode) {
-      return handleAnalysisMode(mode, properties, portfolioTransactions, summary, session.user.id)
+      const result = await handleAnalysisMode(mode, properties, portfolioTransactions, summary, session.user.id)
+      
+      // Store the analysis result
+      await storeAnalysisResult(session.user.id, propertyId, mode, summary, result, 'overview')
+      
+      return result
     }
 
     // Handle single property analysis (backward compatibility)
@@ -104,7 +109,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    const result = {
       success: true,
       analysis: {
         ...analysis,
@@ -124,10 +129,117 @@ export async function POST(request: NextRequest) {
           averageMonthlyExpenses: monthlyExpenses
         }
       }
-    })
+    }
+
+    // Store the analysis result
+    await storeAnalysisResult(session.user.id, propertyId, 'property_analysis', propertyData, result, 'property')
+
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Error analyzing property:', error)
     return NextResponse.json({ error: 'Failed to analyze property' }, { status: 500 })
+  }
+}
+
+async function storeAnalysisResult(userId: string, propertyId: string | undefined, mode: string, summary: any, result: any, analysisType: string) {
+  try {
+    // Extract key insights from the AI response
+    const insights = result.result || result.analysis?.pricingInsights?.marketComparison || 'Analysis completed'
+    
+    // Store in database
+    const { error } = await supabase
+      .from('ai_analyses')
+      .insert({
+        userId,
+        propertyId,
+        analysisType: analysisType.toUpperCase(),
+        mode,
+        summary: summary,
+        insights: insights.substring(0, 1000), // Store key insights
+        fullAnalysis: JSON.stringify(result).substring(0, 5000), // Store full analysis (compressed)
+        metadata: {
+          timestamp: new Date().toISOString(),
+          analysisType: analysisType,
+          mode: mode
+        }
+      })
+
+    if (error) {
+      console.error('Error storing AI analysis:', error)
+    }
+
+    // Store performance metrics if available
+    if (summary && (summary.totalProperties || summary.monthlyIncome)) {
+      await storePerformanceMetrics(userId, propertyId, summary)
+    }
+  } catch (error) {
+    console.error('Error storing analysis result:', error)
+  }
+}
+
+async function storePerformanceMetrics(userId: string, propertyId: string | undefined, summary: any) {
+  try {
+    const metrics = []
+    const now = new Date()
+
+    if (summary.totalProperties) {
+      metrics.push({
+        userId,
+        propertyId,
+        date: now,
+        metricType: 'PROPERTY_VALUE',
+        value: summary.totalProperties,
+        metadata: { type: 'count' }
+      })
+    }
+
+    if (summary.monthlyIncome) {
+      metrics.push({
+        userId,
+        propertyId,
+        date: now,
+        metricType: 'MONTHLY_RENT',
+        value: summary.monthlyIncome,
+        metadata: { type: 'total' }
+      })
+    }
+
+    if (summary.occupancyRate) {
+      metrics.push({
+        userId,
+        propertyId,
+        date: now,
+        metricType: 'OCCUPANCY_RATE',
+        value: summary.occupancyRate,
+        metadata: { type: 'percentage' }
+      })
+    }
+
+    if (summary.totalIncome && summary.totalExpenses) {
+      const netIncome = summary.totalIncome - summary.totalExpenses
+      const roi = summary.totalProperties > 0 ? (netIncome / summary.totalProperties) * 100 : 0
+      
+      metrics.push({
+        userId,
+        propertyId,
+        date: now,
+        metricType: 'ROI',
+        value: roi,
+        metadata: { type: 'percentage' }
+      })
+    }
+
+    if (metrics.length > 0) {
+      const { error } = await supabase
+        .from('performance_metrics')
+        .insert(metrics)
+
+      if (error) {
+        console.error('Error storing performance metrics:', error)
+      }
+    }
+  } catch (error) {
+    console.error('Error storing performance metrics:', error)
   }
 }
 

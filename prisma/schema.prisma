@@ -54,6 +54,8 @@ model User {
   transactions  Transaction[]
   subscriptions Subscription[]
   documents     Document[]
+  aiAnalyses    AIAnalysis[]
+  performanceMetrics PerformanceMetrics[]
 }
 
 model VerificationToken {
@@ -96,6 +98,9 @@ model Property {
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
   documents    Document[]
+  aiAnalyses   AIAnalysis[]
+  performanceMetrics PerformanceMetrics[]
+  snapshots    PropertySnapshot[]
 
   @@map("properties")
 }
@@ -154,6 +159,56 @@ model Document {
   @@map("documents")
 }
 
+// New models for AI analysis and performance tracking
+model AIAnalysis {
+  id          String   @id @default(cuid())
+  userId      String
+  propertyId  String?
+  analysisType AnalysisType
+  mode        String   // 'overview_analysis', 'property_analysis', etc.
+  summary     Json?    // Structured summary data
+  insights    String?  // Key insights (compressed)
+  fullAnalysis String? // Full AI response (compressed)
+  metadata    Json?    // Additional metadata
+  createdAt   DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id])
+
+  @@map("ai_analyses")
+}
+
+model PerformanceMetrics {
+  id          String   @id @default(cuid())
+  userId      String
+  propertyId  String?
+  date        DateTime
+  metricType  MetricType
+  value       Decimal  @db.Decimal(10, 4)
+  metadata    Json?    // Additional context
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property? @relation(fields: [propertyId], references: [id])
+
+  @@map("performance_metrics")
+}
+
+model PropertySnapshot {
+  id            String   @id @default(cuid())
+  propertyId    String
+  date          DateTime
+  monthlyRent   Decimal  @db.Decimal(10, 2)
+  estimatedValue Decimal @db.Decimal(10, 2)
+  occupancyRate Decimal  @db.Decimal(5, 2)
+  capRate       Decimal? @db.Decimal(5, 4)
+  roi           Decimal? @db.Decimal(5, 4)
+  metadata      Json?    // Additional snapshot data
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("property_snapshots")
+}
+
 enum PropertyType {
   SINGLE_FAMILY
   MULTI_FAMILY
@@ -190,4 +245,23 @@ enum DocumentType {
   INSURANCE
   TAX_DOCUMENT
   OTHER
+}
+
+enum AnalysisType {
+  OVERVIEW
+  PROPERTY
+  TRANSACTION
+  REPORT
+  TAX
+}
+
+enum MetricType {
+  MONTHLY_RENT
+  OCCUPANCY_RATE
+  CAP_RATE
+  ROI
+  CASH_FLOW
+  PROPERTY_VALUE
+  EXPENSE_RATIO
+  INCOME_GROWTH
 }
