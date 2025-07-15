@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '../auth/[...nextauth]/route'
 import { supabase } from '../../../lib/supabase'
 import { checkSubscriptionStatus, checkUsageLimits } from '../../../lib/subscription'
 
@@ -18,7 +19,7 @@ export async function GET() {
     console.log('GET /api/properties - Authorization header:', authHeader)
     console.log('GET /api/properties - Cookie header:', cookieHeader)
     
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     
     console.log('GET /api/properties - Session:', JSON.stringify(session, null, 2))
     
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
     console.log('POST /api/properties - Authorization header:', authHeader)
     console.log('POST /api/properties - Cookie header:', cookieHeader)
     
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     
     console.log('POST /api/properties - Session:', JSON.stringify(session, null, 2))
     

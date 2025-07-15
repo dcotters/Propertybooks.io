@@ -1,4 +1,4 @@
-import NextAuth from "next-auth"
+import NextAuth, { AuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { supabase } from "../../../../lib/supabase"
@@ -8,7 +8,7 @@ console.log('NextAuth Config - NEXTAUTH_URL:', process.env.NEXTAUTH_URL)
 console.log('NextAuth Config - NEXTAUTH_SECRET exists:', !!process.env.NEXTAUTH_SECRET)
 console.log('NextAuth Config - NODE_ENV:', process.env.NODE_ENV)
 
-const handler = NextAuth({
+export const authOptions: AuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -70,14 +70,14 @@ const handler = NextAuth({
     })
   ],
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as const,
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: "/auth/signin",
   },
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account }: any) {
       console.log('JWT Callback - Token:', JSON.stringify(token, null, 2))
       console.log('JWT Callback - User:', JSON.stringify(user, null, 2))
       console.log('JWT Callback - Account:', JSON.stringify(account, null, 2))
@@ -96,7 +96,7 @@ const handler = NextAuth({
       console.log('JWT Callback - Final token:', JSON.stringify(token, null, 2))
       return token
     },
-    async session({ session, token }) {
+    async session({ session, token }: any) {
       console.log('Session Callback - Session:', JSON.stringify(session, null, 2))
       console.log('Session Callback - Token:', JSON.stringify(token, null, 2))
       
@@ -110,7 +110,7 @@ const handler = NextAuth({
       console.log('Session Callback - Final session:', JSON.stringify(session, null, 2))
       return session
     },
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account, profile }: any) {
       console.log('SignIn Callback - User:', JSON.stringify(user, null, 2))
       console.log('SignIn Callback - Account:', JSON.stringify(account, null, 2))
       return true
@@ -130,6 +130,8 @@ const handler = NextAuth({
     }
   },
   debug: process.env.NODE_ENV === 'development',
-})
+}
+
+const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST } 
