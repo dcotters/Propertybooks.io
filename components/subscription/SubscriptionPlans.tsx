@@ -87,32 +87,32 @@ export default function SubscriptionPlans() {
 
   return (
     <div className="bg-white">
-      <div className="max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8">
-        <div className="sm:flex sm:flex-col sm:align-center">
-          <h1 className="text-5xl font-extrabold text-gray-900 sm:text-center">
+      <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl">
             Pricing Plans
           </h1>
-          <p className="mt-5 text-xl text-gray-500 sm:text-center">
+          <p className="mt-4 text-lg text-gray-500 sm:text-xl max-w-2xl mx-auto">
             Choose the perfect plan for your property management needs
           </p>
         </div>
 
-        <div className="mt-12 space-y-4 sm:mt-16 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-6 lg:max-w-4xl lg:mx-auto xl:max-w-none xl:mx-0 xl:grid-cols-3">
+        <div className="mt-12 space-y-6 sm:mt-16 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-8 lg:max-w-5xl lg:mx-auto xl:max-w-none xl:mx-0 xl:grid-cols-3">
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className={`border border-gray-200 rounded-lg shadow-sm divide-y divide-gray-200 bg-white ${
-                plan.popular ? 'border-indigo-500 ring-2 ring-indigo-500' : ''
+              className={`relative border border-gray-200 rounded-xl shadow-lg divide-y divide-gray-200 bg-white transition-all duration-200 hover:shadow-xl ${
+                plan.popular ? 'border-primary-500 ring-2 ring-primary-500 scale-105' : ''
               }`}
             >
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="inline-flex rounded-full bg-primary-600 px-4 py-1 text-sm font-semibold tracking-wide uppercase text-white shadow-lg">
+                    Most popular
+                  </span>
+                </div>
+              )}
               <div className="p-6">
-                {plan.popular && (
-                  <div className="absolute top-0 transform -translate-y-1/2">
-                    <span className="inline-flex rounded-full bg-indigo-600 px-4 py-1 text-sm font-semibold tracking-wide uppercase text-white">
-                      Most popular
-                    </span>
-                  </div>
-                )}
 
                 <h2 className="text-lg leading-6 font-medium text-gray-900">
                   {plan.name}
@@ -131,9 +131,9 @@ export default function SubscriptionPlans() {
                 <button
                   onClick={() => handleSubscribe(plan.id)}
                   disabled={loading === plan.id}
-                  className={`mt-8 block w-full bg-indigo-600 border border-transparent rounded-md py-2 text-sm font-semibold text-white text-center hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`mt-8 block w-full border border-transparent rounded-lg py-3 text-sm font-semibold text-white text-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                     plan.popular
-                      ? 'bg-indigo-600 hover:bg-indigo-700'
+                      ? 'bg-primary-600 hover:bg-primary-700'
                       : 'bg-gray-800 hover:bg-gray-900'
                   }`}
                 >
