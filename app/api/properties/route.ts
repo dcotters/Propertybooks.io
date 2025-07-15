@@ -7,7 +7,10 @@ export async function GET() {
   try {
     const session = await getServerSession()
     
+    console.log('GET /api/properties - Session:', JSON.stringify(session, null, 2))
+    
     if (!session?.user?.id) {
+      console.log('GET /api/properties - No session or user ID found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -33,7 +36,10 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession()
     
+    console.log('POST /api/properties - Session:', JSON.stringify(session, null, 2))
+    
     if (!session?.user?.id) {
+      console.log('POST /api/properties - No session or user ID found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

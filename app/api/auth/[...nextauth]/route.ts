@@ -50,25 +50,53 @@ const handler = NextAuth({
     })
   ],
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: "/auth/signin",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      console.log('JWT Callback - Token:', JSON.stringify(token, null, 2))
+      console.log('JWT Callback - User:', JSON.stringify(user, null, 2))
+      console.log('JWT Callback - Account:', JSON.stringify(account, null, 2))
+      
       if (user) {
         token.id = user.id
+        console.log('JWT Callback - Setting user ID:', user.id)
       }
       return token
     },
     async session({ session, token }) {
+      console.log('Session Callback - Session:', JSON.stringify(session, null, 2))
+      console.log('Session Callback - Token:', JSON.stringify(token, null, 2))
+      
       if (token) {
         session.user.id = token.id as string
+        console.log('Session Callback - Setting session user ID:', token.id)
       }
       return session
+    },
+    async signIn({ user, account, profile }) {
+      console.log('SignIn Callback - User:', JSON.stringify(user, null, 2))
+      console.log('SignIn Callback - Account:', JSON.stringify(account, null, 2))
+      return true
     }
-  }
+  },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.propertybooks.io' : undefined
+      }
+    }
+  },
+  debug: process.env.NODE_ENV === 'development',
 })
 
 export { handler as GET, handler as POST } 
