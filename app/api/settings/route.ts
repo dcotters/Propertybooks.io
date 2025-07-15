@@ -127,7 +127,11 @@ export async function POST(request: NextRequest) {
         propertyType: 'Residential'
       }
 
-      const taxInsights = await generateTaxInsights(country, propertyData)
+      // Find the full country name from the country code
+      const selectedCountry = countries.find(c => c.code === country)
+      const countryName = selectedCountry?.name || country
+
+      const taxInsights = await generateTaxInsights(countryName, propertyData)
 
       return NextResponse.json({ taxInsights })
     }

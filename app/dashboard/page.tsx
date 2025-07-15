@@ -465,7 +465,7 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          mode: 'portfolio_insights',
+          mode: 'overview_analysis',
           properties: properties,
           transactions: transactions,
           summary: {
@@ -481,6 +481,8 @@ export default function Dashboard() {
       if (response.ok) {
         const data = await response.json()
         setOverviewInsights(data.result)
+      } else {
+        console.error('AI analysis failed:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Error generating insights:', error)
@@ -653,7 +655,27 @@ export default function Dashboard() {
                     <Menu.Item>
                       {({ active }) => (
                         <button
-                          onClick={() => signOut({ callbackUrl: '/' })}
+                          onClick={async () => {
+                            try {
+                              // Clear any local storage or session storage
+                              localStorage.clear()
+                              sessionStorage.clear()
+                              
+                              // Sign out with NextAuth
+                              await signOut({ 
+                                callbackUrl: '/',
+                                redirect: false 
+                              })
+                              
+                              // Force a complete page reload to clear all cached data
+                              window.location.reload()
+                            } catch (error) {
+                              console.error('Logout error:', error)
+                              // Force redirect to home page with reload
+                              window.location.href = '/'
+                              window.location.reload()
+                            }
+                          }}
                           className={`flex items-center w-full text-left px-4 py-2 text-sm text-red-600 ${active ? 'bg-gray-100' : ''}`}
                         >
                           <UserIcon className="h-4 w-4 mr-3" />

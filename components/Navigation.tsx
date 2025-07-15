@@ -170,16 +170,23 @@ export default function Navigation() {
                           <button
                             onClick={async () => {
                               try {
+                                // Clear any local storage or session storage
+                                localStorage.clear()
+                                sessionStorage.clear()
+                                
+                                // Sign out with NextAuth
                                 await signOut({ 
                                   callbackUrl: '/',
                                   redirect: false 
                                 })
-                                // Force a hard refresh to clear any cached session data
-                                window.location.href = '/'
+                                
+                                // Force a complete page reload to clear all cached data
+                                window.location.reload()
                               } catch (error) {
                                 console.error('Logout error:', error)
-                                // Force redirect to home page
+                                // Force redirect to home page with reload
                                 window.location.href = '/'
+                                window.location.reload()
                               }
                             }}
                             className={`flex items-center w-full text-left px-4 py-2 text-sm text-red-600 ${active ? 'bg-gray-100' : ''}`}

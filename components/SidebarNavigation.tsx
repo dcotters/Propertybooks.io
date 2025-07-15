@@ -33,10 +33,24 @@ export default function SidebarNavigation() {
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
-      await signOut({ callbackUrl: '/' })
+      // Clear any local storage or session storage
+      localStorage.clear()
+      sessionStorage.clear()
+      
+      // Sign out with NextAuth
+      await signOut({ 
+        callbackUrl: '/',
+        redirect: false 
+      })
+      
+      // Force a complete page reload to clear all cached data
+      window.location.reload()
     } catch (error) {
       console.error('Logout error:', error)
       setIsLoggingOut(false)
+      // Force redirect to home page with reload
+      window.location.href = '/'
+      window.location.reload()
     }
   }
 
