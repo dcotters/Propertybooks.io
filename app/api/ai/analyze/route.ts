@@ -3,6 +3,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../../lib/auth'
 import { supabase } from '../../../../lib/supabase'
 import { analyzeProperty } from '../../../../lib/ai-analysis'
+import OpenAI from 'openai'
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,8 +18,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { propertyId, analysisType } = body
+    const { propertyId, analysisType, mode, properties, transactions: portfolioTransactions, summary } = body
 
+    // Handle different analysis modes
+    if (mode) {
+      return handleAnalysisMode(mode, properties, portfolioTransactions, summary, session.user.id)
+    }
+
+    // Handle single property analysis (backward compatibility)
     if (!propertyId) {
       return NextResponse.json({ error: 'Property ID is required' }, { status: 400 })
     }
@@ -32,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch property transactions for context
-    const { data: transactions } = await supabase
+    const { data: propertyTransactions } = await supabase
       .from('transactions')
       .select('*')
       .eq('propertyId', propertyId)
@@ -40,9 +51,9 @@ export async function POST(request: NextRequest) {
       .order('date', { ascending: false })
 
     // Calculate monthly expenses from transactions
-    const monthlyExpenses = transactions
-      ?.filter(t => t.type === 'EXPENSE')
-      .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0) / 12 || 0
+    const monthlyExpenses = propertyTransactions
+      ?.filter((t: any) => t.type === 'EXPENSE')
+      .reduce((sum: number, t: any) => sum + Math.abs(Number(t.amount)), 0) / 12 || 0
 
     // Prepare property data for AI analysis
     const propertyData = {
@@ -98,10 +109,10 @@ export async function POST(request: NextRequest) {
         additionalInsights,
         propertyData,
         transactionSummary: {
-          totalTransactions: transactions?.length || 0,
-          totalIncome: transactions?.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + Number(t.amount), 0) || 0,
-          totalExpenses: transactions?.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0) || 0,
-          averageMonthlyIncome: transactions?.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + Number(t.amount), 0) / 12 || 0,
+          totalTransactions: propertyTransactions?.length || 0,
+          totalIncome: propertyTransactions?.filter((t: any) => t.type === 'INCOME').reduce((sum: number, t: any) => sum + Number(t.amount), 0) || 0,
+          totalExpenses: propertyTransactions?.filter((t: any) => t.type === 'EXPENSE').reduce((sum: number, t: any) => sum + Math.abs(Number(t.amount)), 0) || 0,
+          averageMonthlyIncome: propertyTransactions?.filter((t: any) => t.type === 'INCOME').reduce((sum: number, t: any) => sum + Number(t.amount), 0) / 12 || 0,
           averageMonthlyExpenses: monthlyExpenses
         }
       }
@@ -109,5 +120,140 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error analyzing property:', error)
     return NextResponse.json({ error: 'Failed to analyze property' }, { status: 500 })
+  }
+}
+
+async function handleAnalysisMode(mode: string, properties: any[], transactions: any[], summary: any, userId: string) {
+  try {
+    let prompt = ''
+    let systemMessage = ''
+
+    switch (mode) {
+      case 'property_analysis':
+        systemMessage = 'You are a professional real estate investment analyst. Provide comprehensive portfolio analysis and recommendations.'
+        prompt = `
+Analyze this property portfolio and provide insights:
+
+Portfolio Summary:
+- Total Properties: ${summary.totalProperties}
+- Average Rent: $${summary.averageRent?.toLocaleString() || 'N/A'}
+- Total Portfolio Value: $${summary.totalValue?.toLocaleString() || 'N/A'}
+- Occupancy Rate: ${summary.occupancyRate?.toFixed(1)}%
+
+Properties: ${properties.map(p => `
+- ${p.name}: ${p.propertyType}, ${p.units} units, $${p.monthlyRent}/month rent, $${p.estimatedValue?.toLocaleString() || p.purchasePrice?.toLocaleString()} value
+`).join('')}
+
+Provide:
+1. Portfolio performance analysis
+2. Market positioning insights
+3. Optimization recommendations
+4. Risk assessment
+5. Growth opportunities
+
+Be specific and actionable.
+`
+        break
+
+      case 'transaction_analysis':
+        systemMessage = 'You are a financial analyst specializing in real estate investment. Provide transaction pattern analysis and financial optimization insights.'
+        prompt = `
+Analyze these transaction patterns:
+
+Summary:
+- Total Transactions: ${summary.totalTransactions}
+- Total Income: $${summary.totalIncome?.toLocaleString() || 'N/A'}
+- Total Expenses: $${summary.totalExpenses?.toLocaleString() || 'N/A'}
+- Average Transaction: $${summary.averageTransaction?.toLocaleString() || 'N/A'}
+
+Top Expense Categories: ${summary.topCategories?.map(([cat, amt]: [string, number]) => `${cat}: $${amt.toLocaleString()}`).join(', ') || 'N/A'}
+
+Provide:
+1. Spending pattern analysis
+2. Income optimization opportunities
+3. Expense reduction strategies
+4. Cash flow improvement recommendations
+5. Financial health assessment
+
+Be practical and actionable.
+`
+        break
+
+      case 'overview_analysis':
+        systemMessage = 'You are a real estate portfolio manager. Provide comprehensive overview analysis and strategic recommendations.'
+        prompt = `
+Analyze this portfolio overview:
+
+Portfolio Metrics:
+- Total Properties: ${summary.totalProperties}
+- Total Income: $${summary.totalIncome?.toLocaleString() || 'N/A'}
+- Total Expenses: $${summary.totalExpenses?.toLocaleString() || 'N/A'}
+- Monthly Income: $${summary.monthlyIncome?.toLocaleString() || 'N/A'}
+- Occupancy Rate: ${summary.occupancyRate?.toFixed(1)}%
+
+Provide:
+1. Portfolio health assessment
+2. Performance benchmarks
+3. Strategic recommendations
+4. Risk factors
+5. Growth opportunities
+6. Immediate action items
+
+Be comprehensive and strategic.
+`
+        break
+
+      case 'report_analysis':
+        systemMessage = 'You are a financial reporting analyst. Provide insights on financial reports and performance metrics.'
+        prompt = `
+Analyze this financial report data:
+
+Portfolio Summary:
+- Total Properties: ${summary.totalProperties}
+- Total Transactions: ${summary.totalTransactions}
+- Report Type: ${summary.reportType || 'General'}
+
+Provide:
+1. Financial performance analysis
+2. Key metrics interpretation
+3. Trend analysis
+4. Benchmarking insights
+5. Strategic recommendations
+6. Areas for improvement
+
+Focus on actionable financial insights.
+`
+        break
+
+      default:
+        return NextResponse.json({ error: 'Invalid analysis mode' }, { status: 400 })
+    }
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: systemMessage
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1500
+    })
+
+    const result = completion.choices[0].message.content
+
+    return NextResponse.json({
+      success: true,
+      result
+    })
+
+  } catch (error) {
+    console.error('Error in analysis mode:', error)
+    return NextResponse.json({ error: 'Failed to generate analysis' }, { status: 500 })
   }
 } 
