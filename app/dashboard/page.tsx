@@ -611,7 +611,6 @@ export default function Dashboard() {
       setInsightsLoading(false)
     }
   }
-  // TODO: Add document limit check if needed
 
   if (loading) {
     return (
