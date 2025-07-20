@@ -24,6 +24,7 @@ import { Modal } from '../../components/ai/AIAnalysisPanel'
 import { useTabContext } from '../../components/providers/TabProvider'
 import PropertyEditModal from '../../components/PropertyEditModal'
 import TaxInsightsPage from '../../components/TaxInsightsPage'
+import FinancialReports from '../../components/FinancialReports'
 import { Menu } from '@headlessui/react'
 import { useSession, signOut } from 'next-auth/react'
 
@@ -102,6 +103,8 @@ interface AddTransactionForm {
   recurring: boolean
   recurringFrequency: string
   tags: string[]
+  taxCategory?: string
+  paidBy?: string
 }
 
 export default function Dashboard() {
@@ -154,7 +157,9 @@ export default function Dashboard() {
     notes: '',
     recurring: false,
     recurringFrequency: 'MONTHLY',
-    tags: []
+    tags: [],
+    taxCategory: '',
+    paidBy: ''
   })
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showEditPropertyModal, setShowEditPropertyModal] = useState(false)
@@ -328,7 +333,9 @@ export default function Dashboard() {
           notes: '',
           recurring: false,
           recurringFrequency: 'MONTHLY',
-          tags: []
+          tags: [],
+          taxCategory: '',
+          paidBy: ''
         })
       } else {
         const errorData = await response.json()
@@ -1475,6 +1482,10 @@ export default function Dashboard() {
         {selectedTab === 'taxes' && (
           <TaxInsightsPage />
         )}
+
+        {selectedTab === 'financial-reports' && (
+          <FinancialReports />
+        )}
       </div>
 
       {/* Add Property Modal */}
@@ -1960,6 +1971,47 @@ export default function Dashboard() {
                           <option value="Other">Other</option>
                         </optgroup>
                       </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tax Category and Payment Details */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Tax & Payment Details</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tax Category (CRA)</label>
+                      <select
+                        value={transactionForm.taxCategory || ''}
+                        onChange={(e) => setTransactionForm({...transactionForm, taxCategory: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                      >
+                        <option value="">Select Tax Category</option>
+                        <option value="Advertising">Advertising</option>
+                        <option value="Insurance">Insurance</option>
+                        <option value="Interest & Bank Charges">Interest & Bank Charges</option>
+                        <option value="Maintenance & Repairs">Maintenance & Repairs</option>
+                        <option value="Management & Administration Fees">Management & Administration Fees</option>
+                        <option value="Motor Vehicle">Motor Vehicle</option>
+                        <option value="Office Expenses">Office Expenses</option>
+                        <option value="Professional Fees">Professional Fees</option>
+                        <option value="Property Taxes">Property Taxes</option>
+                        <option value="Salaries, Wages & Benefits">Salaries, Wages & Benefits</option>
+                        <option value="Travel">Travel</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Other Expenses">Other Expenses</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Paid By</label>
+                      <input
+                        type="text"
+                        placeholder="e.g., David, Ryan, Property Management"
+                        value={transactionForm.paidBy || ''}
+                        onChange={(e) => setTransactionForm({...transactionForm, paidBy: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                      />
                     </div>
                   </div>
                 </div>
