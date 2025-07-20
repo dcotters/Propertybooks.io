@@ -10,7 +10,6 @@ import {
   CurrencyDollarIcon,
   ArrowUpIcon,
   ArrowDownIcon,
-  DownloadIcon,
   EyeIcon
 } from '@heroicons/react/24/outline'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
