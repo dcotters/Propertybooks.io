@@ -27,6 +27,8 @@ import TaxInsightsPage from '../../components/TaxInsightsPage'
 import FinancialReports from '../../components/FinancialReports'
 import { Menu } from '@headlessui/react'
 import { useSession, signOut } from 'next-auth/react'
+import UserAvatar from '../../components/UserAvatar'
+import SettingsModal from '../../components/SettingsModal'
 
 interface Property {
   id: string
@@ -635,10 +637,8 @@ export default function Dashboard() {
                 )}
               </button>
               <Menu as="div" className="relative">
-                <Menu.Button className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
-                  <span className="text-white text-sm font-medium">
-                    D
-                  </span>
+                <Menu.Button as="div">
+                  <UserAvatar name={"David"} size={32} onClick={() => setShowSettingsModal(true)} />
                 </Menu.Button>
                 <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right bg-white border border-gray-200 rounded-lg shadow-lg focus:outline-none z-50">
                   <div className="py-2">
@@ -2227,6 +2227,7 @@ export default function Dashboard() {
         onSave={handlePropertyUpdate}
         onDelete={handlePropertyDelete}
       />
+      <SettingsModal open={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
     </div>
   )
 } 

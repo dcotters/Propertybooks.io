@@ -7,6 +7,7 @@ import { BuildingOfficeIcon, CalculatorIcon, ArrowRightIcon, CogIcon, UserIcon, 
 import { useSession, signOut } from 'next-auth/react'
 import { Menu } from '@headlessui/react'
 import { UserCircleIcon } from '@heroicons/react/24/solid'
+import UserAvatar from './UserAvatar';
 
 export default function Navigation() {
   const pathname = usePathname()
@@ -72,17 +73,7 @@ export default function Navigation() {
                 </Link>
                 <Menu as="div" className="relative">
                   <Menu.Button className="flex items-center focus:outline-none">
-                    {session.user.image ? (
-                      <img
-                        src={session.user.image}
-                        alt="User avatar"
-                        className="h-9 w-9 rounded-full border border-gray-300"
-                      />
-                    ) : (
-                      <div className="h-9 w-9 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold text-lg">
-                        {session.user.name ? session.user.name[0] : <UserCircleIcon className="h-7 w-7" />}
-                      </div>
-                    )}
+                    <UserAvatar name={session.user.name || undefined} size={36} />
                   </Menu.Button>
                   <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right bg-white border border-gray-200 rounded-lg shadow-lg focus:outline-none z-50">
                     <div className="py-2">
