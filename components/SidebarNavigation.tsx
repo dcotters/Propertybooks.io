@@ -27,7 +27,7 @@ const sidebarTabs = [
   { key: 'calculator', label: 'Calculator', href: '/calculator' },
 ]
 
-export default function SidebarNavigation({ onOpenSettingsModal }: { onOpenSettingsModal: () => void }) {
+export default function SidebarNavigation({ onOpenSettingsModal }: { onOpenSettingsModal?: () => void }) {
   const { selectedTab, setSelectedTab } = useTabContext();
   const pathname = usePathname()
   const { data: session, status } = useSession()
@@ -136,7 +136,10 @@ export default function SidebarNavigation({ onOpenSettingsModal }: { onOpenSetti
           <Menu as="div" className="relative">
             {({ open }) => (
               <>
-                <Menu.Button className="flex items-center w-full p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2" onClick={onOpenSettingsModal}>
+                <Menu.Button
+                  className="flex items-center w-full p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                  onClick={onOpenSettingsModal ? onOpenSettingsModal : undefined}
+                >
                   <UserAvatar name={session.user.name || undefined} size={40} />
                   {!isCollapsed && (
                     <>
