@@ -10,6 +10,7 @@ import { UserCircleIcon } from '@heroicons/react/24/solid'
 import { useState } from 'react'
 import { useTabContext } from './providers/TabProvider'
 import React from 'react'
+import UserAvatar from './UserAvatar';
 
 interface SidebarNavigationProps {
   selectedTab: string;
@@ -136,17 +137,7 @@ export default function SidebarNavigation() {
             {({ open }) => (
               <>
                 <Menu.Button className="flex items-center w-full p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
-                  {session.user.image ? (
-                    <img
-                      src={session.user.image}
-                      alt="User avatar"
-                      className="h-10 w-10 rounded-full border border-gray-300"
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold text-lg">
-                      {session.user.name ? session.user.name.charAt(0).toUpperCase() : <UserCircleIcon className="h-7 w-7" />}
-                    </div>
-                  )}
+                  <UserAvatar name={session.user.name || undefined} size={40} />
                   {!isCollapsed && (
                     <>
                       <span className="ml-3 text-gray-900 font-semibold truncate flex-1 text-left">
