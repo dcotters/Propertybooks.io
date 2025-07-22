@@ -82,6 +82,14 @@ export default function SettingsModal({ open, onClose }: { open: boolean; onClos
     }
   }, [country, countries]);
 
+  // Auto-generate tax insights when country changes
+  useEffect(() => {
+    if (country) {
+      handleGenerateTaxInsights();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [country]);
+
   const handleSaveProfile = async () => {
     setSaving(true);
     setError('');
@@ -288,7 +296,7 @@ export default function SettingsModal({ open, onClose }: { open: boolean; onClos
             <div>
               <h2 className="text-xl font-bold mb-4">Tax & Compliance</h2>
               <div className="space-y-2">
-                <button className="btn-primary" onClick={handleGenerateTaxInsights} type="button">Generate Tax Insights</button>
+                {/* Tax insights auto-generated based on country selection */}
                 {taxInsights && <div className="mt-2 p-2 bg-gray-50 border rounded text-sm whitespace-pre-line">{taxInsights}</div>}
               </div>
             </div>
