@@ -1,3 +1,4 @@
+"use client";
 import SidebarNavigation from '../../components/SidebarNavigation'
 import React, { useEffect, useState } from 'react'
 
