@@ -29,6 +29,8 @@ import { Menu } from '@headlessui/react'
 import { useSession, signOut } from 'next-auth/react'
 import UserAvatar from '../../components/UserAvatar'
 import SettingsModal from '../../components/SettingsModal'
+import SidebarNavigation from '../../components/SidebarNavigation'
+import Navigation from '../../components/Navigation'
 
 interface Property {
   id: string
@@ -2228,6 +2230,8 @@ export default function Dashboard() {
         onDelete={handlePropertyDelete}
       />
       <SettingsModal open={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
+      <SidebarNavigation onOpenSettingsModal={() => setShowSettingsModal(true)} />
+      <Navigation showSettingsModal={showSettingsModal} />
     </div>
   )
 } 

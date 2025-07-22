@@ -27,7 +27,7 @@ const sidebarTabs = [
   { key: 'calculator', label: 'Calculator', href: '/calculator' },
 ]
 
-export default function SidebarNavigation() {
+export default function SidebarNavigation({ onOpenSettingsModal }: { onOpenSettingsModal: () => void }) {
   const { selectedTab, setSelectedTab } = useTabContext();
   const pathname = usePathname()
   const { data: session, status } = useSession()
@@ -136,7 +136,7 @@ export default function SidebarNavigation() {
           <Menu as="div" className="relative">
             {({ open }) => (
               <>
-                <Menu.Button className="flex items-center w-full p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
+                <Menu.Button className="flex items-center w-full p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2" onClick={onOpenSettingsModal}>
                   <UserAvatar name={session.user.name || undefined} size={40} />
                   {!isCollapsed && (
                     <>
@@ -156,16 +156,7 @@ export default function SidebarNavigation() {
                 </Menu.Button>
                 <Menu.Items className="absolute bottom-full left-0 mb-2 w-56 origin-bottom-left bg-white border border-gray-200 rounded-md shadow-lg focus:outline-none z-50">
                   <div className="py-1">
-                    <Menu.Item>
-                      {({ active }) => (
-                        <Link
-                          href="/settings"
-                          className={`block px-4 py-2 text-sm text-gray-700 ${active ? 'bg-gray-100' : ''}`}
-                        >
-                          Profile Settings
-                        </Link>
-                      )}
-                    </Menu.Item>
+                    {/* Remove Profile Settings link, keep only Log Out */}
                     <Menu.Item>
                       {({ active }) => (
                         <button

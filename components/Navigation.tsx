@@ -9,20 +9,23 @@ import { Menu } from '@headlessui/react'
 import { UserCircleIcon } from '@heroicons/react/24/solid'
 import UserAvatar from './UserAvatar';
 
-export default function Navigation() {
+export default function Navigation({ showSettingsModal = false }: { showSettingsModal?: boolean }) {
   const pathname = usePathname()
   const { data: session } = useSession()
 
   const isActive = (path: string) => pathname === path
+  const isDashboard = pathname.startsWith('/dashboard');
 
   return (
     <nav className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <BuildingOfficeIcon className="h-8 w-8 text-primary-600" />
-            <span className="ml-2 text-xl font-bold text-gray-900">PropertyBooks.io</span>
-          </Link>
+          {!isDashboard && (
+            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+              <BuildingOfficeIcon className="h-8 w-8 text-primary-600" />
+              <span className="ml-2 text-xl font-bold text-gray-900">PropertyBooks.io</span>
+            </Link>
+          )}
 
           {/* Desktop navigation */}
           <div className="hidden md:flex items-center space-x-8">
@@ -62,7 +65,7 @@ export default function Navigation() {
 
           {/* Right side - Go to App button or User avatar */}
           <div className="flex items-center">
-            {session?.user ? (
+            {session?.user && !showSettingsModal ? (
               <>
                 <Link 
                   href="/dashboard" 
