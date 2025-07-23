@@ -21,8 +21,8 @@ const sidebarTabs = [
   { key: 'overview', label: 'Overview', href: '/dashboard' },
   { key: 'properties', label: 'Properties', href: '/dashboard' },
   { key: 'transactions', label: 'Transactions', href: '/dashboard' },
+  { key: 'documents', label: 'Documents', href: '/dashboard' },
   { key: 'reports', label: 'Reports', href: '/dashboard' },
-  { key: 'financial-reports', label: 'Financial Reports', href: '/dashboard' },
   { key: 'taxes', label: 'Taxes', href: '/dashboard' },
   { key: 'calculator', label: 'Calculator', href: '/calculator' },
 ]

@@ -32,6 +32,7 @@ import UserAvatar from '../../components/UserAvatar'
 import SettingsModal from '../../components/SettingsModal'
 import SidebarNavigation from '../../components/SidebarNavigation'
 import Navigation from '../../components/Navigation'
+import DocumentManagement from '../../components/DocumentManagement'
 
 interface Property {
   id: string
@@ -1528,8 +1529,8 @@ export default function Dashboard() {
           <TaxInsightsPage />
         )}
 
-        {selectedTab === 'financial-reports' && (
-          <FinancialReports />
+        {selectedTab === 'documents' && (
+          <DocumentManagement />
         )}
       </div>
 
