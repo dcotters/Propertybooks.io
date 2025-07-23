@@ -36,6 +36,35 @@ export async function GET() {
   }
 }
 
+// Simple mapping for demo: map category to taxCategory by country
+function mapCategoryToTaxCategory(category: string, country: string): string {
+  // Example mappings (expand as needed)
+  const usMap: Record<string, string> = {
+    'Repairs': 'Repairs (Schedule E)',
+    'Mortgage Interest': 'Mortgage Interest (Schedule E)',
+    'Property Taxes': 'Taxes (Schedule E)',
+    'Insurance': 'Insurance (Schedule E)',
+    'Utilities': 'Utilities (Schedule E)',
+    'Advertising': 'Advertising (Schedule E)',
+    'Management Fees': 'Management Fees (Schedule E)',
+    'Other': 'Other (Schedule E)',
+    'Rent': 'Rental Income (Schedule E)'
+  };
+  const caMap: Record<string, string> = {
+    'Repairs': 'Repairs (T776)',
+    'Mortgage Interest': 'Interest (T776)',
+    'Property Taxes': 'Property Taxes (T776)',
+    'Insurance': 'Insurance (T776)',
+    'Utilities': 'Utilities (T776)',
+    'Advertising': 'Advertising (T776)',
+    'Management Fees': 'Management and Administration (T776)',
+    'Other': 'Other (T776)',
+    'Rent': 'Gross Rental Income (T776)'
+  };
+  if (country === 'CA') return caMap[category] || 'Other (T776)';
+  return usMap[category] || 'Other (Schedule E)';
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -62,6 +91,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { type, amount, description, category, date, propertyId, receiptUrl } = body
 
+    // Fetch user's country for tax categorization
+    const { data: user } = await supabase
+      .from('users')
+      .select('country')
+      .eq('id', session.user.id)
+      .single()
+    const country = user?.country || 'US';
+
+    const taxCategory = mapCategoryToTaxCategory(category, country);
+
     const { data: transaction, error } = await supabase
       .from('transactions')
       .insert({
@@ -69,6 +108,7 @@ export async function POST(request: NextRequest) {
         amount,
         description,
         category,
+        taxCategory, // Store mapped tax category
         date: new Date(date).toISOString(),
         propertyId,
         receiptUrl,
