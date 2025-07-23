@@ -94,14 +94,25 @@ export default function SettingsModal({ open, onClose }: { open: boolean; onClos
     setSaving(true);
     setError('');
     setSuccess('');
-    const res = await fetch('/api/settings', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, country, currency, timezone }),
-    });
-    if (res.ok) {
-      setSuccess('Profile updated!');
-    } else {
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          email,
+          country, // this is the code
+          timezone,
+          currency,
+          notificationPreferences,
+        }),
+      });
+      if (res.ok) {
+        setSuccess('Profile updated!');
+      } else {
+        setError('Failed to update profile.');
+      }
+    } catch (err) {
       setError('Failed to update profile.');
     }
     setSaving(false);
@@ -199,11 +210,15 @@ export default function SettingsModal({ open, onClose }: { open: boolean; onClos
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Country</label>
-                  <select className="input-field" value={country} onChange={e => setCountry(e.target.value)}>
-                    <option value="">Select country</option>
-                    {countries.map((c: any) => (
-                      <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
-                    ))}
+                  <select
+                    className="w-full border rounded p-2"
+                    value={country}
+                    onChange={e => setCountry(e.target.value)}
+                  >
+                    <option value="">Select country...</option>
+                    <option value="US">United States</option>
+                    <option value="CA">Canada</option>
+                    {/* Add more countries as needed */}
                   </select>
                 </div>
                 <div>

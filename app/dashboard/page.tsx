@@ -199,6 +199,7 @@ export default function Dashboard() {
 
   // Handler to save country
   async function handleSaveCountry(newCountry: string) {
+    // Always save the country code
     await fetch('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
