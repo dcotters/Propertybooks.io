@@ -174,11 +174,40 @@ export default function Dashboard() {
   const [reportsInsights, setReportsInsights] = useState<string>('')
   const [insightsLoading, setInsightsLoading] = useState(false)
   const { selectedTab, setSelectedTab } = useTabContext();
+  const { data: session } = useSession();
+  const [userCountry, setUserCountry] = useState<string | null>(null);
+  const [showLocationModal, setShowLocationModal] = useState(false);
 
   // Fetch real data on component mount
   useEffect(() => {
     fetchData()
   }, [])
+
+  // On mount, fetch user profile for country
+  useEffect(() => {
+    async function fetchUserCountry() {
+      if (session?.user?.id) {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        setUserCountry(data.user?.country || null);
+        if (!data.user?.country) setShowLocationModal(true);
+      }
+    }
+    fetchUserCountry();
+  }, [session?.user?.id]);
+
+  // Handler to save country
+  async function handleSaveCountry(newCountry: string) {
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ country: newCountry }),
+    });
+    setUserCountry(newCountry);
+    setShowLocationModal(false);
+    // Optionally, refetch data to update tax mapping
+    fetchData();
+  }
 
   const fetchData = async () => {
     try {
@@ -614,6 +643,66 @@ export default function Dashboard() {
         </div>
       </div>
     )
+  }
+
+  // Onboarding UI logic
+  if (showLocationModal || !userCountry) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+          <h2 className="text-xl font-bold mb-4">Welcome! Select your country to get started</h2>
+          <select
+            className="w-full border rounded p-2 mb-4"
+            value={userCountry || ''}
+            onChange={e => setUserCountry(e.target.value)}
+          >
+            <option value="">Select country...</option>
+            <option value="US">United States</option>
+            <option value="CA">Canada</option>
+            {/* Add more countries as needed */}
+          </select>
+          <button
+            className="btn-primary w-full"
+            disabled={!userCountry}
+            onClick={() => userCountry && handleSaveCountry(userCountry)}
+          >
+            Save & Continue
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (properties.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <h2 className="text-2xl font-bold mb-4">Add your first property</h2>
+        <p className="mb-6 text-gray-600">Start by uploading details of your first property. This unlocks transaction tracking and tax insights.</p>
+        <button className="btn-primary" onClick={() => setShowAddPropertyModal(true)}>
+          Add Property
+        </button>
+        <PropertyEditModal 
+          property={null}
+          isOpen={showAddPropertyModal}
+          onClose={() => setShowAddPropertyModal(false)}
+          onSave={() => { setShowAddPropertyModal(false); fetchData(); }}
+          onDelete={() => {}}
+        />
+      </div>
+    );
+  }
+
+  if (transactions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <h2 className="text-2xl font-bold mb-4">Add your first transaction</h2>
+        <p className="mb-6 text-gray-600">Upload income or expense transactions for your property. Transactions are automatically categorized for tax based on your location.</p>
+        <button className="btn-primary" onClick={() => setShowAddTransactionModal(true)}>
+          Add Transaction
+        </button>
+        {/* AddTransactionModal should be rendered here if you have one */}
+      </div>
+    );
   }
 
   return (
