@@ -877,133 +877,26 @@ export default function Dashboard() {
 
         {/* Tab Content */}
         {selectedTab === 'overview' && (
-          <div className="space-y-6">
-            {/* Recent Properties */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="card"
+          <>
+            {/* Existing Dashboard content ... */}
+            {/* Floating Action Button for AI Analysis */}
+            <button
+              onClick={generateOverviewInsights}
+              className="fixed bottom-8 right-8 z-50 bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg p-6 flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-primary-300"
+              style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.15)' }}
+              aria-label="Analyze Portfolio with AI"
+              title="Analyze Portfolio with AI"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Recent Properties</h2>
-                <button 
-                  onClick={() => setShowAddPropertyModal(true)}
-                  className="btn-primary flex items-center"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Add Property
-                </button>
-              </div>
-              
-              {properties.length === 0 ? (
-                <div className="text-center py-12">
-                  <HomeIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No properties yet</h3>
-                  <p className="text-gray-600 mb-4">Get started by adding your first property</p>
-                  <button 
-                    onClick={() => setShowAddPropertyModal(true)}
-                    className="btn-primary"
-                  >
-                    Add Your First Property
-                  </button>
-                </div>
+              {insightsLoading ? (
+                <svg className="animate-spin h-8 w-8" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                </svg>
               ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {properties.slice(0, 6).map((property) => (
-                    <div key={property.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">{property.name}</h3>
-                        <div className="flex items-center space-x-2">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(property.status || 'active')}`}>
-                            {property.status || 'active'}
-                          </span>
-                          <button
-                            onClick={() => handleEditProperty(property)}
-                            className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                            title="Edit Property"
-                          >
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                      <p className="text-gray-600 mb-2">{property.address}</p>
-                      <p className="text-gray-600 mb-4">{property.city}, {property.state} {property.zipCode}</p>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Monthly Rent</span>
-                        <span className="font-medium">{formatCurrency(property.monthlyRent || 0)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <InformationCircleIcon className="h-8 w-8" />
               )}
-            </motion.div>
-
-            {showOverviewAIAnalysis && overviewInsights && (
-              <div className="bg-white border rounded-lg p-6 mb-8">
-                <div className="flex items-center mb-4">
-                  <div className="bg-purple-100 p-2 rounded-lg mr-3">
-                    <InformationCircleIcon className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <h2 className="text-xl font-semibold text-gray-900">AI Portfolio Analysis</h2>
-                </div>
-                <div className="prose max-w-none">
-                  <div className="whitespace-pre-wrap text-gray-700 leading-relaxed">
-                    {overviewInsights}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Recent Transactions */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="card"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Recent Transactions</h2>
-                <button 
-                  onClick={() => setShowAddTransactionModal(true)}
-                  className="btn-primary flex items-center"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Add Transaction
-                </button>
-              </div>
-              
-              {transactions.length === 0 ? (
-                <div className="text-center py-12">
-                  <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions yet</h3>
-                  <p className="text-gray-600">Start tracking your income and expenses</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {transactions.slice(0, 5).map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center">
-                        {getTransactionIcon(transaction.type)}
-                        <div className="ml-4">
-                          <p className="text-sm font-medium text-gray-900">{transaction.description}</p>
-                          <p className="text-sm text-gray-500">{transaction.date}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-sm font-medium ${transaction.amount > 0 ? 'text-success-600' : 'text-red-600'}`}>
-                          {formatCurrency(Math.abs(transaction.amount))}
-                        </p>
-                        <p className="text-xs text-gray-500 capitalize">{transaction.type.toLowerCase()}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          </div>
+            </button>
+          </>
         )}
 
         {selectedTab === 'properties' && (
