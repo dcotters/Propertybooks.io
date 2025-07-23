@@ -43,6 +43,13 @@ export default function TaxInsightsPage() {
     fetchProperties()
   }, [])
 
+  // Keep selectedCountry in sync with userSettings.country
+  useEffect(() => {
+    if (userSettings?.country) {
+      setSelectedCountry(userSettings.country)
+    }
+  }, [userSettings?.country])
+
   const fetchUserSettings = async () => {
     try {
       const response = await fetch('/api/settings', {
@@ -51,7 +58,7 @@ export default function TaxInsightsPage() {
       if (response.ok) {
         const data = await response.json()
         setUserSettings(data.user)
-        setSelectedCountry(data.user.country || 'US')
+        setSelectedCountry(data.user.country || '')
       }
     } catch (error) {
       console.error('Error fetching user settings:', error)
@@ -133,6 +140,26 @@ export default function TaxInsightsPage() {
     }
   }
 
+  // When user changes country, update profile and cascade
+  const handleCountryChange = async (newCountry: string) => {
+    setSelectedCountry(newCountry)
+    setIsLoading(true)
+    try {
+      await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ country: newCountry }),
+      })
+      // Refetch user settings to cascade change
+      fetchUserSettings()
+    } catch (error) {
+      console.error('Error updating country:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const formatCurrency = (amount: number, currency = 'USD') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -159,7 +186,7 @@ export default function TaxInsightsPage() {
           <div className="flex items-center space-x-4">
             <select
               value={selectedCountry}
-              onChange={(e) => setSelectedCountry(e.target.value)}
+              onChange={(e) => handleCountryChange(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {countries.map(country => (
