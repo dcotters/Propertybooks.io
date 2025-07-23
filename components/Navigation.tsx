@@ -63,22 +63,14 @@ export default function Navigation({ showSettingsModal = false }: { showSettings
             )}
           </div>
 
-          {/* Right side - Go to App button or User avatar */}
+          {/* Right side - User avatar only, no Go to App button */}
           <div className="flex items-center">
             {session?.user && !showSettingsModal ? (
-              <>
-                <Link 
-                  href="/dashboard" 
-                  className="btn-primary flex items-center mr-3"
-                >
-                  <ArrowRightIcon className="h-4 w-4 mr-1" />
-                  Go to App
-                </Link>
-                <Menu as="div" className="relative">
-                  <Menu.Button className="flex items-center focus:outline-none">
-                    <UserAvatar name={session.user.name || undefined} size={36} />
-                  </Menu.Button>
-                  <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right bg-white border border-gray-200 rounded-lg shadow-lg focus:outline-none z-50">
+              <Menu as="div" className="relative">
+                <Menu.Button className="flex items-center focus:outline-none">
+                  <UserAvatar name={session.user.name || undefined} size={36} />
+                </Menu.Button>
+                <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right bg-white border border-gray-200 rounded-lg shadow-lg focus:outline-none z-50">
                     <div className="py-2">
                       <div className="px-4 py-2 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900">{session.user.name || 'User'}</p>
@@ -193,7 +185,6 @@ export default function Navigation({ showSettingsModal = false }: { showSettings
                     </div>
                   </Menu.Items>
                 </Menu>
-              </>
             ) : null}
 
             {/* Mobile menu button (not implemented) */}
