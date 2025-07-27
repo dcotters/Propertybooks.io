@@ -56,6 +56,21 @@ export interface TaxOptimizationAnalysis {
   }
 }
 
+export interface ReceiptAnalysis {
+  vendor: string
+  amount: number
+  date: string
+  items: string[]
+  category: string
+  taxCategory: string
+  taxDeductible: boolean
+  deductionType: string
+  confidence: number
+  description: string
+  suggestedTags: string[]
+  complianceNotes: string[]
+}
+
 export interface PropertyData {
   name: string
   address: string
@@ -72,6 +87,152 @@ export interface PropertyData {
   bathrooms: number
   units: number
   monthlyExpenses: number
+}
+
+export async function analyzeReceipt(imageUrl: string, country: string = 'US'): Promise<ReceiptAnalysis> {
+  try {
+    const prompt = `
+You are a tax expert specializing in real estate expense categorization. Analyze this receipt image and extract all relevant information for tax purposes.
+
+Please analyze the receipt and provide:
+
+1. VENDOR INFORMATION:
+- Vendor/store name
+- Vendor type (hardware store, utility company, etc.)
+
+2. TRANSACTION DETAILS:
+- Total amount
+- Date of transaction
+- Individual items purchased (if listed)
+
+3. TAX CATEGORIZATION:
+- Primary expense category (Maintenance, Utilities, Insurance, etc.)
+- Tax deduction category (Ordinary & Necessary, Capital Improvement, etc.)
+- Whether it's tax deductible for landlords
+- Specific tax deduction type
+
+4. TAX COMPLIANCE:
+- Any compliance considerations
+- Suggested tags for tracking
+- Important notes for tax filing
+
+Respond in JSON format:
+{
+  "vendor": "string",
+  "amount": number,
+  "date": "YYYY-MM-DD",
+  "items": ["item1", "item2"],
+  "category": "string",
+  "taxCategory": "string",
+  "taxDeductible": boolean,
+  "deductionType": "string",
+  "confidence": number (0-100),
+  "description": "string",
+  "suggestedTags": ["tag1", "tag2"],
+  "complianceNotes": ["note1", "note2"]
+}
+
+Common landlord expense categories:
+- Maintenance & Repairs
+- Utilities
+- Insurance
+- Property Taxes
+- Mortgage Interest
+- Property Management
+- Travel & Mileage
+- Home Office
+- Depreciation
+- Legal & Professional
+- Advertising
+- Cleaning & Landscaping
+
+Be thorough and accurate in your analysis. If you cannot read certain parts of the receipt, indicate low confidence and provide best estimates.
+`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4-vision-preview",
+      messages: [
+        {
+          role: "system",
+          content: "You are a tax expert specializing in real estate expense categorization. Provide accurate, compliant categorization for landlord expenses from receipt images."
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: prompt
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: imageUrl
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 1000,
+      temperature: 0.3
+    });
+
+    const response = completion.choices[0].message.content;
+    const analysis = JSON.parse(response || '{}');
+    
+    // Validate and enhance the analysis
+    return validateAndEnhanceReceiptAnalysis(analysis);
+  } catch (error) {
+    console.error('Error analyzing receipt:', error);
+    return {
+      vendor: 'Unknown',
+      amount: 0,
+      date: new Date().toISOString().split('T')[0],
+      items: [],
+      category: 'Other',
+      taxCategory: 'Other',
+      taxDeductible: false,
+      deductionType: 'None',
+      confidence: 0,
+      description: 'Unable to analyze receipt',
+      suggestedTags: ['unanalyzed'],
+      complianceNotes: ['Receipt analysis failed - manual review required']
+    };
+  }
+}
+
+function validateAndEnhanceReceiptAnalysis(analysis: any): ReceiptAnalysis {
+  // Ensure all required fields are present
+  const enhanced = {
+    vendor: analysis.vendor || 'Unknown',
+    amount: parseFloat(analysis.amount) || 0,
+    date: analysis.date || new Date().toISOString().split('T')[0],
+    items: Array.isArray(analysis.items) ? analysis.items : [],
+    category: analysis.category || 'Other',
+    taxCategory: analysis.taxCategory || 'Other',
+    taxDeductible: Boolean(analysis.taxDeductible),
+    deductionType: analysis.deductionType || 'None',
+    confidence: Math.min(100, Math.max(0, analysis.confidence || 0)),
+    description: analysis.description || 'Receipt analysis',
+    suggestedTags: Array.isArray(analysis.suggestedTags) ? analysis.suggestedTags : [],
+    complianceNotes: Array.isArray(analysis.complianceNotes) ? analysis.complianceNotes : []
+  };
+
+  // Enhance with additional tax insights
+  if (enhanced.category === 'Maintenance & Repairs') {
+    enhanced.taxDeductible = true;
+    enhanced.deductionType = 'Ordinary & Necessary';
+    enhanced.suggestedTags.push('repair', 'maintenance');
+  } else if (enhanced.category === 'Utilities') {
+    enhanced.taxDeductible = true;
+    enhanced.deductionType = 'Operating Expense';
+    enhanced.suggestedTags.push('utility', 'operating');
+  } else if (enhanced.category === 'Insurance') {
+    enhanced.taxDeductible = true;
+    enhanced.deductionType = 'Operating Expense';
+    enhanced.suggestedTags.push('insurance', 'protection');
+  }
+
+  return enhanced;
 }
 
 export async function analyzeProperty(property: PropertyData): Promise<PropertyAnalysis> {

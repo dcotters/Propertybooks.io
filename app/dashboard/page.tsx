@@ -32,6 +32,7 @@ import UserAvatar from '../../components/UserAvatar'
 import SettingsModal from '../../components/SettingsModal'
 import SidebarNavigation from '../../components/SidebarNavigation'
 import DocumentManagement from '../../components/DocumentManagement'
+import ReceiptAnalysisPreview from '../../components/ReceiptAnalysisPreview'
 
 interface Property {
   id: string
@@ -125,6 +126,8 @@ export default function Dashboard() {
   const [reportData, setReportData] = useState<any>(null)
   const [reportType, setReportType] = useState('income-statement')
   const [reportLoading, setReportLoading] = useState(false)
+  const [receiptAnalysis, setReceiptAnalysis] = useState<any>(null)
+  const [showReceiptAnalysis, setShowReceiptAnalysis] = useState(false)
   const [propertyForm, setPropertyForm] = useState<AddPropertyForm>({
     name: '',
     address: '',
@@ -320,22 +323,53 @@ export default function Dashboard() {
     try {
       setUploading(true)
       let receiptUrl = ''
+      let receiptAnalysis: any = null
 
-      // Upload receipt file if provided
+      // Upload and analyze receipt file if provided
       if (transactionForm.receiptFile) {
         const formData = new FormData()
         formData.append('file', transactionForm.receiptFile)
-        formData.append('type', 'receipt')
+        formData.append('country', userCountry || 'US')
         
-        const uploadResponse = await fetch('/api/upload', {
+        // First, analyze the receipt using AI
+        const analysisResponse = await fetch('/api/ai/receipt-analysis', {
           method: 'POST',
           body: formData,
           credentials: 'include',
         })
         
-        if (uploadResponse.ok) {
-          const uploadResult = await uploadResponse.json()
-          receiptUrl = uploadResult.url
+        if (analysisResponse.ok) {
+          const analysisResult = await analysisResponse.json()
+          receiptAnalysis = analysisResult.analysis
+          receiptUrl = analysisResult.document?.url || ''
+          
+          // Show receipt analysis preview
+          setReceiptAnalysis(receiptAnalysis)
+          setShowReceiptAnalysis(true)
+          
+          // Auto-fill form with AI analysis results if high confidence
+          if (receiptAnalysis && receiptAnalysis.confidence > 70) {
+            setTransactionForm(prev => ({
+              ...prev,
+              amount: receiptAnalysis.amount.toString(),
+              description: receiptAnalysis.description,
+              category: receiptAnalysis.category,
+              taxCategory: receiptAnalysis.taxCategory,
+              tags: receiptAnalysis.suggestedTags || []
+            }))
+          }
+        } else {
+          // Fallback to regular upload if analysis fails
+          const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+          })
+          
+          if (uploadResponse.ok) {
+            const uploadResult = await uploadResponse.json()
+            receiptUrl = uploadResult.url
+          }
         }
       }
 
@@ -2025,6 +2059,9 @@ export default function Dashboard() {
                 {/* Receipt Upload */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="text-lg font-semibold text-gray-900 mb-4">Receipt & Notes</h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Upload a receipt photo to automatically categorize expenses for tax purposes using AI analysis.
+                  </p>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Receipt (Optional)</label>
@@ -2041,20 +2078,37 @@ export default function Dashboard() {
                                 id="receipt-upload"
                                 name="receipt-upload"
                                 type="file"
-                                accept=".pdf,.jpg,.jpeg,.png"
+                                accept=".jpg,.jpeg,.png,.gif,.webp"
                                 className="sr-only"
                                 onChange={handleFileChange}
                               />
                             </label>
                             <p className="pl-1">or drag and drop</p>
                           </div>
-                          <p className="text-xs text-gray-500">PDF, PNG, JPG up to 10MB</p>
+                          <p className="text-xs text-gray-500">PNG, JPG, GIF, WEBP up to 5MB for AI analysis</p>
                         </div>
                       </div>
                       {transactionForm.receiptFile && (
                         <p className="mt-2 text-sm text-gray-600">
                           Selected: {transactionForm.receiptFile.name}
                         </p>
+                      )}
+                      
+                      {/* Receipt Analysis Preview */}
+                      {showReceiptAnalysis && receiptAnalysis && (
+                        <div className="mt-4">
+                          <ReceiptAnalysisPreview
+                            analysis={receiptAnalysis}
+                            onAccept={() => {
+                              setShowReceiptAnalysis(false)
+                              // Form is already auto-filled
+                            }}
+                            onReject={() => {
+                              setShowReceiptAnalysis(false)
+                              setReceiptAnalysis(null)
+                            }}
+                          />
+                        </div>
                       )}
                     </div>
                     
