@@ -15,7 +15,10 @@ import {
   SparklesIcon,
   CalendarIcon,
   TagIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
+  XMarkIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import { Modal } from './ai/AIAnalysisPanel'
 
@@ -43,6 +46,8 @@ interface Document {
     keyPoints?: any
     createdAt: string
   }>
+  status?: 'pending' | 'reviewed' | 'approved' | 'expired'
+  expiryDate?: string
 }
 
 interface DocumentForm {
@@ -52,8 +57,40 @@ interface DocumentForm {
   category: string
   propertyId: string
   tags: string
+  status: string
+  expiryDate: string
   file?: File
 }
+
+const DOCUMENT_TYPES = [
+  { value: 'LEGAL_LEASE_AGREEMENT', label: 'Lease Agreement', icon: DocumentTextIcon },
+  { value: 'LEGAL_PURCHASE_CONTRACT', label: 'Purchase Contract', icon: DocumentTextIcon },
+  { value: 'FINANCIAL_MORTGAGE_DOCUMENT', label: 'Mortgage Document', icon: DocumentTextIcon },
+  { value: 'FINANCIAL_INSURANCE_POLICY', label: 'Insurance Policy', icon: DocumentTextIcon },
+  { value: 'FINANCIAL_TAX_DOCUMENT', label: 'Tax Document', icon: DocumentTextIcon },
+  { value: 'MAINTENANCE_REPAIR_RECEIPT', label: 'Repair Receipt', icon: DocumentTextIcon },
+  { value: 'MAINTENANCE_INSPECTION_REPORT', label: 'Inspection Report', icon: DocumentTextIcon },
+  { value: 'TENANT_APPLICATION', label: 'Tenant Application', icon: DocumentTextIcon },
+  { value: 'TENANT_BACKGROUND_CHECK', label: 'Background Check', icon: DocumentTextIcon },
+  { value: 'UTILITY_BILL', label: 'Utility Bill', icon: DocumentTextIcon },
+  { value: 'OTHER', label: 'Other', icon: DocumentTextIcon }
+]
+
+const DOCUMENT_CATEGORIES = [
+  { value: 'LEGAL', label: 'Legal Documents', color: 'bg-blue-100 text-blue-800' },
+  { value: 'FINANCIAL', label: 'Financial Documents', color: 'bg-green-100 text-green-800' },
+  { value: 'MAINTENANCE', label: 'Maintenance & Repairs', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'TENANT', label: 'Tenant Documents', color: 'bg-purple-100 text-purple-800' },
+  { value: 'UTILITY', label: 'Utilities', color: 'bg-orange-100 text-orange-800' },
+  { value: 'OTHER', label: 'Other', color: 'bg-gray-100 text-gray-800' }
+]
+
+const DOCUMENT_STATUSES = [
+  { value: 'pending', label: 'Pending Review', color: 'bg-yellow-100 text-yellow-800' },
+  { value: 'reviewed', label: 'Reviewed', color: 'bg-blue-100 text-blue-800' },
+  { value: 'approved', label: 'Approved', color: 'bg-green-100 text-green-800' },
+  { value: 'expired', label: 'Expired', color: 'bg-red-100 text-red-800' }
+]
 
 export default function DocumentManagement() {
   const [documents, setDocuments] = useState<Document[]>([])
@@ -61,26 +98,28 @@ export default function DocumentManagement() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
-  const [showAnalysisModal, setShowAnalysisModal] = useState(false)
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
-  const [selectedAnalysis, setSelectedAnalysis] = useState<any>(null)
   const [filterType, setFilterType] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
   const [filterProperty, setFilterProperty] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([])
+  const [showBulkActions, setShowBulkActions] = useState(false)
   const [documentForm, setDocumentForm] = useState<DocumentForm>({
     title: '',
     description: '',
     type: 'LEGAL_LEASE_AGREEMENT',
     category: 'LEGAL',
     propertyId: '',
-    tags: ''
+    tags: '',
+    status: 'pending',
+    expiryDate: ''
   })
 
   useEffect(() => {
     fetchDocuments()
     fetchProperties()
-  }, [])
+  }, [filterType, filterCategory, filterProperty, filterStatus])
 
   const fetchDocuments = async () => {
     try {
@@ -91,6 +130,7 @@ export default function DocumentManagement() {
       if (filterType) params.append('type', filterType)
       if (filterCategory) params.append('category', filterCategory)
       if (filterProperty) params.append('propertyId', filterProperty)
+      if (filterStatus) params.append('status', filterStatus)
       
       if (params.toString()) {
         url += `?${params.toString()}`
@@ -126,39 +166,62 @@ export default function DocumentManagement() {
 
     try {
       setUploading(true)
-      const formData = new FormData()
-      formData.append('title', documentForm.title)
-      formData.append('description', documentForm.description)
-      formData.append('type', documentForm.type)
-      formData.append('category', documentForm.category)
-      formData.append('propertyId', documentForm.propertyId)
-      formData.append('tags', documentForm.tags)
-      formData.append('file', documentForm.file)
-
-      const response = await fetch('/api/documents', {
+      
+      // Upload file
+      const uploadFormData = new FormData()
+      uploadFormData.append('file', documentForm.file)
+      uploadFormData.append('type', 'document')
+      uploadFormData.append('propertyId', documentForm.propertyId)
+      
+      const uploadResponse = await fetch('/api/upload', {
         method: 'POST',
-        body: formData,
+        body: uploadFormData,
         credentials: 'include',
       })
 
-      if (response.ok) {
-        const newDocument = await response.json()
-        setDocuments([newDocument, ...documents])
-        setShowUploadModal(false)
-        setDocumentForm({
-          title: '',
-          description: '',
-          type: 'LEGAL_LEASE_AGREEMENT',
-          category: 'LEGAL',
-          propertyId: '',
-          tags: ''
+      if (uploadResponse.ok) {
+        const uploadResult = await uploadResponse.json()
+        
+        // Create document record
+        const documentData = {
+          title: documentForm.title,
+          description: documentForm.description,
+          type: documentForm.type,
+          category: documentForm.category,
+          propertyId: documentForm.propertyId || null,
+          tags: documentForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+          status: documentForm.status,
+          expiryDate: documentForm.expiryDate || null,
+          fileUrl: uploadResult.document.url,
+          fileName: documentForm.file.name,
+          fileSize: documentForm.file.size,
+          mimeType: documentForm.file.type
+        }
+
+        const response = await fetch('/api/documents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(documentData),
+          credentials: 'include',
         })
-      } else {
-        alert('Error uploading document')
+
+        if (response.ok) {
+          setShowUploadModal(false)
+          setDocumentForm({
+            title: '',
+            description: '',
+            type: 'LEGAL_LEASE_AGREEMENT',
+            category: 'LEGAL',
+            propertyId: '',
+            tags: '',
+            status: 'pending',
+            expiryDate: ''
+          })
+          fetchDocuments()
+        }
       }
     } catch (error) {
       console.error('Error uploading document:', error)
-      alert('Error uploading document')
     } finally {
       setUploading(false)
     }
@@ -168,19 +231,59 @@ export default function DocumentManagement() {
     if (!confirm('Are you sure you want to delete this document?')) return
 
     try {
-      const response = await fetch(`/api/documents?id=${documentId}`, {
+      const response = await fetch(`/api/documents/${documentId}`, {
         method: 'DELETE',
         credentials: 'include',
       })
 
       if (response.ok) {
-        setDocuments(documents.filter(doc => doc.id !== documentId))
-      } else {
-        alert('Error deleting document')
+        fetchDocuments()
       }
     } catch (error) {
       console.error('Error deleting document:', error)
-      alert('Error deleting document')
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selectedDocuments.length} documents?`)) return
+
+    try {
+      const response = await fetch('/api/documents/bulk-delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentIds: selectedDocuments }),
+        credentials: 'include',
+      })
+
+      if (response.ok) {
+        setSelectedDocuments([])
+        setShowBulkActions(false)
+        fetchDocuments()
+      }
+    } catch (error) {
+      console.error('Error bulk deleting documents:', error)
+    }
+  }
+
+  const handleBulkStatusUpdate = async (status: string) => {
+    try {
+      const response = await fetch('/api/documents/bulk-update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          documentIds: selectedDocuments, 
+          status 
+        }),
+        credentials: 'include',
+      })
+
+      if (response.ok) {
+        setSelectedDocuments([])
+        setShowBulkActions(false)
+        fetchDocuments()
+      }
+    } catch (error) {
+      console.error('Error bulk updating documents:', error)
     }
   }
 
@@ -193,6 +296,21 @@ export default function DocumentManagement() {
     }
   }
 
+  const handleDocumentSelect = (documentId: string) => {
+    setSelectedDocuments(prev => 
+      prev.includes(documentId) 
+        ? prev.filter(id => id !== documentId)
+        : [...prev, documentId]
+    )
+  }
+
+  const filteredDocuments = documents.filter(doc => {
+    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         doc.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+    return matchesSearch
+  })
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes'
     const k = 1024
@@ -202,104 +320,36 @@ export default function DocumentManagement() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
+    return new Date(dateString).toLocaleDateString()
   }
 
   const getDocumentIcon = (type: string) => {
-    switch (type) {
-      case 'LEGAL_LEASE_AGREEMENT':
-        return <DocumentTextIcon className="h-6 w-6 text-blue-600" />
-      case 'LEGAL_INSURANCE_POLICY':
-      case 'LEGAL_INSURANCE_DOCUMENT':
-        return <DocumentIcon className="h-6 w-6 text-green-600" />
-      case 'LEGAL_PROPERTY_TAX_DOCUMENT':
-      case 'LEGAL_TAX_DOCUMENT':
-        return <DocumentIcon className="h-6 w-6 text-red-600" />
-      case 'LEGAL_MAINTENANCE_CONTRACT':
-        return <DocumentIcon className="h-6 w-6 text-orange-600" />
-      case 'LEGAL_COURT_DOCUMENT':
-      case 'LEGAL_NOTICE':
-      case 'LEGAL_EVICTION_NOTICE':
-      case 'LEGAL_TERMINATION_NOTICE':
-        return <DocumentIcon className="h-6 w-6 text-purple-600" />
-      case 'LEGAL_RECEIPT':
-      case 'LEGAL_INVOICE':
-        return <DocumentIcon className="h-6 w-6 text-yellow-600" />
-      default:
-        return <DocumentIcon className="h-6 w-6 text-gray-600" />
-    }
+    const docType = DOCUMENT_TYPES.find(t => t.value === type)
+    return docType ? <docType.icon className="h-6 w-6" /> : <DocumentIcon className="h-6 w-6" />
   }
 
   const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'LEGAL':
-        return 'bg-blue-100 text-blue-800'
-      case 'FINANCIAL':
-        return 'bg-green-100 text-green-800'
-      case 'PROPERTY_MANAGEMENT':
-        return 'bg-purple-100 text-purple-800'
-      case 'INSURANCE':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'TAX':
-        return 'bg-red-100 text-red-800'
-      case 'MAINTENANCE':
-        return 'bg-orange-100 text-orange-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
+    const cat = DOCUMENT_CATEGORIES.find(c => c.value === category)
+    return cat ? cat.color : 'bg-gray-100 text-gray-800'
   }
 
-  const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-    
-    return matchesSearch
-  })
+  const getStatusColor = (status: string) => {
+    const stat = DOCUMENT_STATUSES.find(s => s.value === status)
+    return stat ? stat.color : 'bg-gray-100 text-gray-800'
+  }
 
-  const documentTypes = [
-    { value: 'LEGAL_LEASE_AGREEMENT', label: 'Legal Lease Agreement' },
-    { value: 'LEGAL_RENTAL_APPLICATION', label: 'Legal Rental Application' },
-    { value: 'LEGAL_PROPERTY_MANAGEMENT_AGREEMENT', label: 'Legal Property Management Agreement' },
-    { value: 'LEGAL_INSURANCE_POLICY', label: 'Legal Insurance Policy' },
-    { value: 'LEGAL_PROPERTY_TAX_DOCUMENT', label: 'Legal Property Tax Document' },
-    { value: 'LEGAL_MORTGAGE_DOCUMENT', label: 'Legal Mortgage Document' },
-    { value: 'LEGAL_INSPECTION_REPORT', label: 'Legal Inspection Report' },
-    { value: 'LEGAL_MAINTENANCE_CONTRACT', label: 'Legal Maintenance Contract' },
-    { value: 'LEGAL_NOTICE', label: 'Legal Notice' },
-    { value: 'LEGAL_COURT_DOCUMENT', label: 'Legal Court Document' },
-    { value: 'LEGAL_FINANCIAL_STATEMENT', label: 'Legal Financial Statement' },
-    { value: 'LEGAL_RECEIPT', label: 'Legal Receipt' },
-    { value: 'LEGAL_INVOICE', label: 'Legal Invoice' },
-    { value: 'LEGAL_CONTRACT', label: 'Legal Contract' },
-    { value: 'LEGAL_TAX_DOCUMENT', label: 'Legal Tax Document' },
-    { value: 'LEGAL_INSURANCE_DOCUMENT', label: 'Legal Insurance Document' },
-    { value: 'LEGAL_COMPLIANCE_DOCUMENT', label: 'Legal Compliance Document' },
-    { value: 'LEGAL_DISCLOSURE_DOCUMENT', label: 'Legal Disclosure Document' },
-    { value: 'LEGAL_AMENDMENT', label: 'Legal Amendment' },
-    { value: 'LEGAL_ADDENDUM', label: 'Legal Addendum' },
-    { value: 'LEGAL_TERMINATION_NOTICE', label: 'Legal Termination Notice' },
-    { value: 'LEGAL_EVICTION_NOTICE', label: 'Legal Eviction Notice' },
-    { value: 'LEGAL_SETTLEMENT_AGREEMENT', label: 'Legal Settlement Agreement' },
-    { value: 'LEGAL_LIABILITY_WAIVER', label: 'Legal Liability Waiver' },
-    { value: 'LEGAL_INDEMNIFICATION_AGREEMENT', label: 'Legal Indemnification Agreement' },
-    { value: 'OTHER', label: 'Other' }
-  ]
+  const isExpired = (expiryDate?: string) => {
+    if (!expiryDate) return false
+    return new Date(expiryDate) < new Date()
+  }
 
-  const documentCategories = [
-    { value: 'LEGAL', label: 'Legal' },
-    { value: 'FINANCIAL', label: 'Financial' },
-    { value: 'PROPERTY_MANAGEMENT', label: 'Property Management' },
-    { value: 'INSURANCE', label: 'Insurance' },
-    { value: 'TAX', label: 'Tax' },
-    { value: 'MAINTENANCE', label: 'Maintenance' },
-    { value: 'INSPECTION', label: 'Inspection' },
-    { value: 'OTHER', label: 'Other' }
-  ]
+  const isExpiringSoon = (expiryDate?: string) => {
+    if (!expiryDate) return false
+    const expiry = new Date(expiryDate)
+    const now = new Date()
+    const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    return expiry <= thirtyDaysFromNow && expiry > now
+  }
 
   if (loading) {
     return (
@@ -349,7 +399,7 @@ export default function DocumentManagement() {
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
             >
               <option value="">All Types</option>
-              {documentTypes.map(type => (
+              {DOCUMENT_TYPES.map(type => (
                 <option key={type.value} value={type.value}>{type.label}</option>
               ))}
             </select>
@@ -360,7 +410,7 @@ export default function DocumentManagement() {
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
             >
               <option value="">All Categories</option>
-              {documentCategories.map(category => (
+              {DOCUMENT_CATEGORIES.map(category => (
                 <option key={category.value} value={category.value}>{category.label}</option>
               ))}
             </select>
@@ -397,19 +447,6 @@ export default function DocumentManagement() {
                 </div>
               </div>
               <div className="flex space-x-1">
-                <button
-                  onClick={() => {
-                    setSelectedDocument(document)
-                    if (document.aiAnalyses && document.aiAnalyses.length > 0) {
-                      setSelectedAnalysis(document.aiAnalyses[0])
-                      setShowAnalysisModal(true)
-                    }
-                  }}
-                  className="p-1 text-gray-400 hover:text-blue-600"
-                  title="View AI Analysis"
-                >
-                  <SparklesIcon className="h-4 w-4" />
-                </button>
                 <button
                   onClick={() => window.open(document.fileUrl, '_blank')}
                   className="p-1 text-gray-400 hover:text-green-600"
@@ -450,12 +487,6 @@ export default function DocumentManagement() {
                 <CalendarIcon className="h-3 w-3 mr-1" />
                 {formatDate(document.createdAt)}
               </div>
-              {document.aiAnalyses && document.aiAnalyses.length > 0 && (
-                <div className="flex items-center text-green-600">
-                  <SparklesIcon className="h-3 w-3 mr-1" />
-                  AI Analyzed
-                </div>
-              )}
             </div>
 
             {document.tags.length > 0 && (
@@ -536,7 +567,7 @@ export default function DocumentManagement() {
                     onChange={(e) => setDocumentForm({...documentForm, type: e.target.value})}
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
-                    {documentTypes.map(type => (
+                    {DOCUMENT_TYPES.map(type => (
                       <option key={type.value} value={type.value}>{type.label}</option>
                     ))}
                   </select>
@@ -550,7 +581,7 @@ export default function DocumentManagement() {
                     onChange={(e) => setDocumentForm({...documentForm, category: e.target.value})}
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
-                    {documentCategories.map(category => (
+                    {DOCUMENT_CATEGORIES.map(category => (
                       <option key={category.value} value={category.value}>{category.label}</option>
                     ))}
                   </select>
@@ -626,48 +657,6 @@ export default function DocumentManagement() {
             </form>
           </div>
         </div>
-      )}
-
-      {/* AI Analysis Modal */}
-      {showAnalysisModal && selectedAnalysis && (
-        <Modal
-          open={showAnalysisModal}
-          onClose={() => setShowAnalysisModal(false)}
-          title="AI Document Analysis"
-        >
-          <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center mb-2">
-                <SparklesIcon className="h-5 w-5 text-blue-600 mr-2" />
-                <h4 className="font-semibold text-blue-900">Analysis Summary</h4>
-              </div>
-              <p className="text-blue-800 text-sm">{selectedAnalysis.summary}</p>
-            </div>
-
-            {selectedAnalysis.keyPoints && (
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Key Points</h4>
-                <ul className="space-y-1">
-                  {selectedAnalysis.keyPoints.points?.map((point: string, index: number) => (
-                    <li key={index} className="text-sm text-gray-700 flex items-start">
-                      <span className="text-primary-600 mr-2">•</span>
-                      {point}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-2">Full Analysis</h4>
-              <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
-                <div className="whitespace-pre-wrap text-sm text-gray-700">
-                  {selectedAnalysis.content}
-                </div>
-              </div>
-            </div>
-          </div>
-        </Modal>
       )}
     </div>
   )

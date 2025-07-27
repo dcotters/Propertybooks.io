@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { data: user } = await supabase
-      .from('users')
+      .from('"User"')
       .select('*')
       .eq('id', session.user.id)
       .single()
@@ -68,7 +68,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const { data: user, error } = await supabase
-      .from('users')
+      .from('"User"')
       .update({
         name: name || undefined,
         email: email || undefined,

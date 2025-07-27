@@ -31,7 +31,6 @@ import { useSession, signOut } from 'next-auth/react'
 import UserAvatar from '../../components/UserAvatar'
 import SettingsModal from '../../components/SettingsModal'
 import SidebarNavigation from '../../components/SidebarNavigation'
-import Navigation from '../../components/Navigation'
 import DocumentManagement from '../../components/DocumentManagement'
 
 interface Property {
@@ -2168,7 +2167,6 @@ export default function Dashboard() {
       />
       <SettingsModal open={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
       <SidebarNavigation onOpenSettingsModal={() => setShowSettingsModal(true)} />
-      <Navigation showSettingsModal={showSettingsModal} />
     </div>
   )
 } 

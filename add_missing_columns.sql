@@ -80,3 +80,10 @@ BEGIN
     END IF;
 
 END $$; 
+
+-- Migration: Add missing columns to public."User" table for settings/profile
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS country text;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS timezone text;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS currency text;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS notificationPreferences jsonb;
+-- You can add more columns as needed for businessName, businessAddress, taxId, accountingMethod, etc. 

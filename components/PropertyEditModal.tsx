@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { countries } from '../data/countries'
+import { PhotoIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline'
 
 interface Property {
   id: string
@@ -23,6 +24,8 @@ interface Property {
   bathrooms: number
   parkingSpaces: number
   description: string
+  status?: 'active' | 'maintenance' | 'vacant'
+  photos?: string[]
 }
 
 interface PropertyEditModalProps {
@@ -59,13 +62,16 @@ export default function PropertyEditModal({
     bedrooms: 2,
     bathrooms: 1,
     parkingSpaces: 0,
-    description: ''
+    description: '',
+    status: 'active',
+    photos: []
   })
 
   const [isLoading, setIsLoading] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [aiAnalysis, setAiAnalysis] = useState<any>(null)
   const [showAnalysis, setShowAnalysis] = useState(false)
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
 
   useEffect(() => {
     if (property) {
@@ -81,6 +87,50 @@ export default function PropertyEditModal({
                name === 'units' || name === 'yearBuilt' || name === 'squareFootage' || 
                name === 'bedrooms' || name === 'bathrooms' || name === 'parkingSpaces' 
                ? Number(value) || 0 : value
+    }))
+  }
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return
+    
+    setUploadingPhotos(true)
+    try {
+      const newPhotos: string[] = []
+      
+      for (let i = 0; i < e.target.files.length; i++) {
+        const file = e.target.files[i]
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', file)
+        uploadFormData.append('type', 'property_photo')
+        uploadFormData.append('propertyId', formData.id || '')
+        
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadFormData,
+          credentials: 'include',
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          newPhotos.push(result.document.url)
+        }
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        photos: [...(prev.photos || []), ...newPhotos]
+      }))
+    } catch (error) {
+      console.error('Error uploading photos:', error)
+    } finally {
+      setUploadingPhotos(false)
+    }
+  }
+
+  const removePhoto = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      photos: prev.photos?.filter((_, i) => i !== index) || []
     }))
   }
 
@@ -466,6 +516,62 @@ export default function PropertyEditModal({
               </div>
             </div>
           )}
+
+          {/* Status */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Status
+            </label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="active">Active</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="vacant">Vacant</option>
+            </select>
+          </div>
+
+          {/* Photos */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Property Photos
+            </label>
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {formData.photos && formData.photos.length > 0 ? (
+                formData.photos.map((photo, index) => (
+                  <div key={index} className="relative w-24 h-24 rounded-md overflow-hidden">
+                    <img src={photo} alt={`Property photo ${index + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(index)}
+                      className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      title="Remove photo"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="flex items-center justify-center w-24 h-24 bg-gray-200 rounded-md text-gray-500">
+                  <PlusIcon className="h-6 w-6" />
+                </div>
+              )}
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoUpload}
+              disabled={uploadingPhotos}
+              className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+            {uploadingPhotos && (
+              <p className="mt-2 text-sm text-gray-500">Uploading photos...</p>
+            )}
+          </div>
 
           {/* Description */}
           <div>

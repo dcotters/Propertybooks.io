@@ -93,6 +93,8 @@ model Property {
   bathrooms    Int?
   parkingSpaces Int?
   description  String?
+  status      String?  @default("active") // active, maintenance, vacant
+  photos      String[] // Array of photo URLs
   userId      String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
