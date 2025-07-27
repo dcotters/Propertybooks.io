@@ -54,6 +54,11 @@ export interface TaxOptimizationAnalysis {
     yearEndStrategies: string[]
     filingDeadlines: string[]
   }
+  canadianForms: {
+    requiredForms: string[]
+    formDescriptions: string[]
+    filingRequirements: string[]
+  }
 }
 
 export interface ReceiptAnalysis {
@@ -69,6 +74,8 @@ export interface ReceiptAnalysis {
   description: string
   suggestedTags: string[]
   complianceNotes: string[]
+  canadianForm: string
+  gstHstEligible: boolean
 }
 
 export interface PropertyData {
@@ -89,10 +96,10 @@ export interface PropertyData {
   monthlyExpenses: number
 }
 
-export async function analyzeReceipt(imageUrl: string, country: string = 'US'): Promise<ReceiptAnalysis> {
+export async function analyzeReceipt(imageUrl: string, country: string = 'CA'): Promise<ReceiptAnalysis> {
   try {
     const prompt = `
-You are a tax expert specializing in real estate expense categorization. Analyze this receipt image and extract all relevant information for tax purposes.
+You are a Canadian tax expert specializing in real estate expense categorization. Analyze this receipt image and extract all relevant information for Canadian tax purposes.
 
 Please analyze the receipt and provide:
 
@@ -104,17 +111,21 @@ Please analyze the receipt and provide:
 - Total amount
 - Date of transaction
 - Individual items purchased (if listed)
+- GST/HST amount (if applicable)
 
-3. TAX CATEGORIZATION:
-- Primary expense category (Maintenance, Utilities, Insurance, etc.)
-- Tax deduction category (Ordinary & Necessary, Capital Improvement, etc.)
-- Whether it's tax deductible for landlords
-- Specific tax deduction type
+3. CANADIAN TAX CATEGORIZATION:
+- Primary expense category for T776 (Statement of Real Estate Rentals)
+- Tax deduction category (Operating Expense, CCA, etc.)
+- Whether it's tax deductible for Canadian landlords
+- Specific Canadian tax deduction type
+- Applicable Canadian tax form (T776, T2125, etc.)
 
-4. TAX COMPLIANCE:
-- Any compliance considerations
+4. CANADIAN TAX COMPLIANCE:
+- GST/HST considerations
+- CCA (Capital Cost Allowance) eligibility
+- Compliance notes for Canadian tax filing
 - Suggested tags for tracking
-- Important notes for tax filing
+- Important notes for Canadian tax filing
 
 Respond in JSON format:
 {
@@ -129,24 +140,28 @@ Respond in JSON format:
   "confidence": number (0-100),
   "description": "string",
   "suggestedTags": ["tag1", "tag2"],
-  "complianceNotes": ["note1", "note2"]
+  "complianceNotes": ["note1", "note2"],
+  "canadianForm": "string",
+  "gstHstEligible": boolean
 }
 
-Common landlord expense categories:
-- Maintenance & Repairs
-- Utilities
-- Insurance
-- Property Taxes
-- Mortgage Interest
-- Property Management
-- Travel & Mileage
-- Home Office
-- Depreciation
-- Legal & Professional
+Common Canadian landlord expense categories for T776:
 - Advertising
-- Cleaning & Landscaping
+- Insurance
+- Interest and bank charges
+- Office expenses
+- Professional fees (includes legal fees)
+- Management and administration fees
+- Repairs and maintenance
+- Salaries, wages, and benefits
+- Property taxes
+- Travel
+- Utilities
+- Motor vehicle expenses
+- CCA (Capital Cost Allowance) - separate line
+- GST/HST on expenses (input tax credits)
 
-Be thorough and accurate in your analysis. If you cannot read certain parts of the receipt, indicate low confidence and provide best estimates.
+Be thorough and accurate in your analysis for Canadian tax compliance. If you cannot read certain parts of the receipt, indicate low confidence and provide best estimates.
 `;
 
     const completion = await openai.chat.completions.create({
@@ -154,7 +169,7 @@ Be thorough and accurate in your analysis. If you cannot read certain parts of t
       messages: [
         {
           role: "system",
-          content: "You are a tax expert specializing in real estate expense categorization. Provide accurate, compliant categorization for landlord expenses from receipt images."
+          content: "You are a Canadian tax expert specializing in real estate expense categorization. Provide accurate, compliant categorization for Canadian landlord expenses from receipt images."
         },
         {
           role: "user",
@@ -195,7 +210,9 @@ Be thorough and accurate in your analysis. If you cannot read certain parts of t
       confidence: 0,
       description: 'Unable to analyze receipt',
       suggestedTags: ['unanalyzed'],
-      complianceNotes: ['Receipt analysis failed - manual review required']
+      complianceNotes: ['Receipt analysis failed - manual review required'],
+      canadianForm: 'T776',
+      gstHstEligible: false
     };
   }
 }
@@ -214,22 +231,32 @@ function validateAndEnhanceReceiptAnalysis(analysis: any): ReceiptAnalysis {
     confidence: Math.min(100, Math.max(0, analysis.confidence || 0)),
     description: analysis.description || 'Receipt analysis',
     suggestedTags: Array.isArray(analysis.suggestedTags) ? analysis.suggestedTags : [],
-    complianceNotes: Array.isArray(analysis.complianceNotes) ? analysis.complianceNotes : []
+    complianceNotes: Array.isArray(analysis.complianceNotes) ? analysis.complianceNotes : [],
+    canadianForm: analysis.canadianForm || 'T776',
+    gstHstEligible: Boolean(analysis.gstHstEligible)
   };
 
-  // Enhance with additional tax insights
-  if (enhanced.category === 'Maintenance & Repairs') {
+  // Enhance with Canadian tax insights
+  if (enhanced.category === 'Repairs and maintenance') {
     enhanced.taxDeductible = true;
-    enhanced.deductionType = 'Ordinary & Necessary';
-    enhanced.suggestedTags.push('repair', 'maintenance');
+    enhanced.deductionType = 'Operating Expense';
+    enhanced.suggestedTags.push('repair', 'maintenance', 'T776');
+    enhanced.complianceNotes.push('Deductible as operating expense on T776');
   } else if (enhanced.category === 'Utilities') {
     enhanced.taxDeductible = true;
     enhanced.deductionType = 'Operating Expense';
-    enhanced.suggestedTags.push('utility', 'operating');
+    enhanced.suggestedTags.push('utility', 'operating', 'T776');
+    enhanced.complianceNotes.push('Deductible as operating expense on T776');
   } else if (enhanced.category === 'Insurance') {
     enhanced.taxDeductible = true;
     enhanced.deductionType = 'Operating Expense';
-    enhanced.suggestedTags.push('insurance', 'protection');
+    enhanced.suggestedTags.push('insurance', 'protection', 'T776');
+    enhanced.complianceNotes.push('Deductible as operating expense on T776');
+  } else if (enhanced.category === 'Property taxes') {
+    enhanced.taxDeductible = true;
+    enhanced.deductionType = 'Operating Expense';
+    enhanced.suggestedTags.push('property-tax', 'T776');
+    enhanced.complianceNotes.push('Deductible as operating expense on T776');
   }
 
   return enhanced;
@@ -238,7 +265,7 @@ function validateAndEnhanceReceiptAnalysis(analysis: any): ReceiptAnalysis {
 export async function analyzeProperty(property: PropertyData): Promise<PropertyAnalysis> {
   try {
     const prompt = `
-You are a professional real estate investment analyst. Analyze the following property and provide comprehensive insights:
+You are a professional Canadian real estate investment analyst. Analyze the following property and provide comprehensive insights for Canadian landlords:
 
 Property Details:
 - Name: ${property.name}
@@ -257,21 +284,21 @@ Property Details:
 Please provide a detailed analysis including:
 
 1. PRICING INSIGHTS:
-- Is the property overpriced or underpriced for its market?
+- Is the property overpriced or underpriced for the Canadian market?
 - What should the recommended rent be?
-- How does it compare to similar properties?
+- How does it compare to similar properties in the area?
 - What factors affect the pricing?
 
 2. MARKET ANALYSIS:
-- What's the current market trend in this area?
+- What's the current market trend in this Canadian area?
 - What's the demand level?
 - What's the investment potential?
-- Key market insights
+- Key market insights for Canadian investors
 
 3. RECOMMENDATIONS:
 - Specific improvements to increase value
 - Marketing suggestions
-- Financial optimization strategies
+- Financial optimization strategies for Canadian tax benefits
 - Risk factors to consider
 
 4. ROI ANALYSIS:
@@ -280,7 +307,7 @@ Please provide a detailed analysis including:
 - Cap rate calculation
 - Break-even analysis
 
-Provide specific, actionable insights that a landlord can use to make informed decisions. Be concise but thorough.
+Provide specific, actionable insights that a Canadian landlord can use to make informed decisions. Be concise but thorough.
 `;
 
     const completion = await openai.chat.completions.create({
@@ -288,7 +315,7 @@ Provide specific, actionable insights that a landlord can use to make informed d
       messages: [
         {
           role: "system",
-          content: "You are a professional real estate investment analyst with expertise in property valuation, market analysis, and investment strategies. Provide practical, data-driven insights that help landlords make informed decisions."
+          content: "You are a professional Canadian real estate investment analyst with expertise in property valuation, market analysis, and investment strategies. Provide practical, data-driven insights that help Canadian landlords make informed decisions."
         },
         {
           role: "user",
@@ -310,7 +337,7 @@ Provide specific, actionable insights that a landlord can use to make informed d
 }
 
 export async function analyzeTaxOptimization(
-  country: string, 
+  country: string = 'CA', 
   propertyData: any[], 
   transactions: any[]
 ): Promise<TaxOptimizationAnalysis> {
@@ -324,9 +351,9 @@ export async function analyzeTaxOptimization(
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
     const prompt = `
-You are a tax expert specializing in real estate investment. Analyze the following landlord data for tax optimization opportunities:
+You are a Canadian tax expert specializing in real estate investment. Analyze the following landlord data for Canadian tax optimization opportunities:
 
-Country: ${country}
+Country: Canada
 Total Properties: ${propertyData.length}
 Total Annual Income: $${totalIncome.toLocaleString()}
 Total Annual Expenses: $${totalExpenses.toLocaleString()}
@@ -343,30 +370,39 @@ ${transactions.reduce((acc, t) => {
   return acc;
 }, {} as any)}
 
-Please provide comprehensive tax optimization analysis including:
+Please provide comprehensive Canadian tax optimization analysis including:
 
-1. DEDUCTIONS ANALYSIS:
-- List all available tax deductions for landlords in ${country}
+1. CANADIAN DEDUCTIONS ANALYSIS:
+- List all available tax deductions for Canadian landlords
 - Identify any missed deduction opportunities
 - Calculate potential deduction amounts
-- Provide specific recommendations
+- Provide specific recommendations for T776 filing
 
-2. TAX LOSS HARVESTING:
-- Identify opportunities for tax loss harvesting
-- Calculate potential tax savings
-- Provide strategic recommendations
+2. CANADIAN TAX FORMS REQUIRED:
+- T776 - Statement of Real Estate Rentals
+- T2125 - Statement of Business or Professional Activities (if applicable)
+- T2091(IND) - Principal Residence Exemption (if applicable)
+- Schedule 3 - Capital Gains (if applicable)
 
-3. EXPENSE CATEGORIZATION:
+3. EXPENSE CATEGORIZATION FOR T776:
 - Review current expense categorization
-- Suggest improvements for better tax compliance
+- Suggest improvements for Canadian tax compliance
 - Identify any compliance issues
+- CCA (Capital Cost Allowance) considerations
 
-4. TAX PLANNING:
-- Calculate quarterly tax estimates
-- Provide year-end tax strategies
-- List important filing deadlines
+4. CANADIAN TAX PLANNING:
+- Quarterly tax estimates
+- Year-end tax strategies for Canadian landlords
+- Important Canadian filing deadlines
+- GST/HST considerations
 
-Provide specific, actionable tax advice that maximizes deductions while ensuring compliance.
+5. CANADIAN TAX COMPLIANCE:
+- CRA requirements and documentation
+- Record keeping requirements
+- Audit considerations
+- Provincial tax considerations
+
+Provide specific, actionable Canadian tax advice that maximizes deductions while ensuring CRA compliance.
 `;
 
     const completion = await openai.chat.completions.create({
@@ -374,7 +410,7 @@ Provide specific, actionable tax advice that maximizes deductions while ensuring
       messages: [
         {
           role: "system",
-          content: "You are a tax expert specializing in real estate investment taxation. Provide clear, practical tax advice that helps landlords optimize their tax position while remaining compliant."
+          content: "You are a Canadian tax expert specializing in real estate investment taxation. Provide clear, practical Canadian tax advice that helps landlords optimize their tax position while remaining CRA compliant."
         },
         {
           role: "user",
@@ -394,32 +430,51 @@ Provide specific, actionable tax advice that maximizes deductions while ensuring
   }
 }
 
-export async function categorizeExpense(description: string, amount: number, country: string): Promise<{
+export async function categorizeExpense(description: string, amount: number, country: string = 'CA'): Promise<{
   category: string;
   taxDeductible: boolean;
   deductionType: string;
   confidence: number;
+  canadianForm: string;
 }> {
   try {
     const prompt = `
-You are a tax expert. Categorize this expense for a landlord in ${country}:
+You are a Canadian tax expert. Categorize this expense for a Canadian landlord:
 
 Description: ${description}
 Amount: $${amount}
 
 Please categorize this expense and determine:
-1. The appropriate expense category
-2. Whether it's tax deductible
-3. The type of deduction (ordinary, capital, etc.)
+1. The appropriate Canadian expense category for T776
+2. Whether it's tax deductible in Canada
+3. The type of deduction (operating expense, CCA, etc.)
 4. Your confidence level (0-100%)
+5. Applicable Canadian tax form
 
 Respond in JSON format:
 {
   "category": "string",
   "taxDeductible": boolean,
   "deductionType": "string",
-  "confidence": number
+  "confidence": number,
+  "canadianForm": "string"
 }
+
+Common Canadian landlord expense categories for T776:
+- Advertising
+- Insurance
+- Interest and bank charges
+- Office expenses
+- Professional fees
+- Management and administration fees
+- Repairs and maintenance
+- Salaries, wages, and benefits
+- Property taxes
+- Travel
+- Utilities
+- Motor vehicle expenses
+- CCA (Capital Cost Allowance)
+- GST/HST on expenses
 `;
 
     const completion = await openai.chat.completions.create({
@@ -427,7 +482,7 @@ Respond in JSON format:
       messages: [
         {
           role: "system",
-          content: "You are a tax expert specializing in real estate expense categorization. Provide accurate, compliant categorization for landlord expenses."
+          content: "You are a Canadian tax expert specializing in real estate expense categorization. Provide accurate, CRA-compliant categorization for Canadian landlord expenses."
         },
         {
           role: "user",
@@ -446,7 +501,8 @@ Respond in JSON format:
       category: 'Other',
       taxDeductible: false,
       deductionType: 'None',
-      confidence: 0
+      confidence: 0,
+      canadianForm: 'T776'
     };
   }
 }
@@ -474,7 +530,7 @@ function parseAnalysisResponse(response: string, property: PropertyData): Proper
       isOverpriced,
       isUnderpriced,
       recommendedRent: Math.round(recommendedRent),
-      marketComparison: "Based on local market data and comparable properties",
+      marketComparison: "Based on Canadian market data and comparable properties",
       pricingFactors: [
         "Location and neighborhood quality",
         "Property condition and age",
@@ -486,7 +542,7 @@ function parseAnalysisResponse(response: string, property: PropertyData): Proper
       marketTrend: capRate > 6 ? 'rising' : capRate > 4 ? 'stable' : 'declining',
       demandLevel: property.monthlyRent > recommendedRent * 0.9 ? 'high' : 'medium',
       investmentPotential: capRate > 7 ? 'excellent' : capRate > 5 ? 'good' : capRate > 3 ? 'fair' : 'poor',
-      marketInsights: "Market analysis based on current economic indicators and local trends"
+      marketInsights: "Market analysis based on current Canadian economic indicators and local trends"
     },
     recommendations: {
       improvements: [
@@ -535,15 +591,19 @@ function parseTaxOptimizationResponse(
     }, {} as any);
 
   const potentialDeductions = [
-    'Mortgage Interest',
-    'Property Taxes',
+    'Advertising',
     'Insurance',
-    'Maintenance & Repairs',
+    'Interest and bank charges',
+    'Office expenses',
+    'Professional fees',
+    'Management and administration fees',
+    'Repairs and maintenance',
+    'Property taxes',
+    'Travel',
     'Utilities',
-    'Property Management Fees',
-    'Travel Expenses',
-    'Home Office',
-    'Depreciation'
+    'Motor vehicle expenses',
+    'CCA (Capital Cost Allowance)',
+    'GST/HST on expenses'
   ];
 
   const missedDeductions = potentialDeductions.filter(deduction => 
@@ -559,49 +619,73 @@ function parseTaxOptimizationResponse(
       deductionAmount: totalExpenses * 0.25, // Rough estimate
       recommendations: [
         'Track all property-related travel expenses',
-        'Consider home office deduction if applicable',
         'Document all maintenance and repair costs',
-        'Keep detailed records of property management fees'
+        'Keep detailed records of property management fees',
+        'Consider CCA for capital improvements'
       ]
     },
     taxLossHarvesting: {
-      opportunities: ['Consider selling underperforming properties', 'Review depreciation schedules'],
+      opportunities: ['Consider selling underperforming properties', 'Review CCA schedules'],
       potentialSavings: totalIncome * 0.15, // Rough estimate
       strategy: 'Review portfolio for properties with losses that could offset gains'
     },
     expenseCategorization: {
       categories: expenseCategories,
       suggestions: [
-        'Use more specific categories for better tracking',
+        'Use T776 categories for better tracking',
         'Separate capital improvements from repairs',
-        'Track mileage for property visits'
+        'Track mileage for property visits',
+        'Consider GST/HST input tax credits'
       ],
       complianceNotes: [
-        'Ensure all expenses are properly documented',
+        'Ensure all expenses are properly documented for CRA',
         'Keep receipts for all deductible expenses',
-        'Separate personal and business expenses'
+        'Separate personal and business expenses',
+        'Maintain records for 6 years as required by CRA'
       ]
     },
     taxPlanning: {
       quarterlyEstimates: (totalIncome - totalExpenses) * 0.25,
       yearEndStrategies: [
         'Prepay deductible expenses',
-        'Review depreciation schedules',
-        'Consider property improvements'
+        'Review CCA schedules',
+        'Consider property improvements',
+        'Plan for GST/HST obligations'
       ],
       filingDeadlines: [
-        'April 15: Annual tax return',
-        'January 31: W-2 and 1099 forms',
-        'Quarterly: Estimated tax payments'
+        'April 30: Personal tax return (T1)',
+        'June 15: Self-employed tax return (T1)',
+        'March 31: Corporate tax return (T2)',
+        'Quarterly: GST/HST returns (if applicable)'
+      ]
+    },
+    canadianForms: {
+      requiredForms: [
+        'T776 - Statement of Real Estate Rentals',
+        'T1 - Personal Income Tax Return',
+        'T2125 - Statement of Business Activities (if applicable)',
+        'T2091(IND) - Principal Residence Exemption (if applicable)'
+      ],
+      formDescriptions: [
+        'T776: Report rental income and expenses',
+        'T1: Personal tax return including T776',
+        'T2125: Business income if flipping properties',
+        'T2091: Principal residence exemption'
+      ],
+      filingRequirements: [
+        'File T776 with T1 personal return',
+        'Keep records for 6 years',
+        'Report all rental income',
+        'Claim all eligible expenses'
       ]
     }
   };
 }
 
-export async function generateTaxInsights(country: string, propertyData: any): Promise<string> {
+export async function generateTaxInsights(country: string = 'CA', propertyData: any): Promise<string> {
   try {
     const prompt = `
-You are a tax expert specializing in real estate investment. Provide tax insights for a landlord in ${country}.
+You are a Canadian tax expert specializing in real estate investment. Provide Canadian tax insights for a landlord in Canada.
 
 Property Details:
 - Purchase Price: $${propertyData.purchasePrice}
@@ -609,14 +693,15 @@ Property Details:
 - Property Type: ${propertyData.propertyType}
 
 Please provide:
-1. Key tax deductions available for landlords in ${country}
-2. Tax implications of rental income
-3. Property depreciation rules
-4. Capital gains considerations
-5. Any tax incentives or credits available
-6. Important filing requirements and deadlines
+1. Key Canadian tax deductions available for landlords
+2. Tax implications of rental income in Canada
+3. CCA (Capital Cost Allowance) rules
+4. Capital gains considerations for Canadian properties
+5. GST/HST considerations for landlords
+6. Important Canadian filing requirements and deadlines
+7. CRA compliance requirements
 
-Provide practical, actionable tax advice that a landlord can use for tax planning.
+Provide practical, actionable Canadian tax advice that a landlord can use for tax planning.
 `;
 
     const completion = await openai.chat.completions.create({
@@ -624,7 +709,7 @@ Provide practical, actionable tax advice that a landlord can use for tax plannin
       messages: [
         {
           role: "system",
-          content: "You are a tax expert specializing in real estate investment taxation. Provide clear, practical tax advice that helps landlords optimize their tax position while remaining compliant."
+          content: "You are a Canadian tax expert specializing in real estate investment taxation. Provide clear, practical Canadian tax advice that helps landlords optimize their tax position while remaining CRA compliant."
         },
         {
           role: "user",
@@ -635,9 +720,9 @@ Provide practical, actionable tax advice that a landlord can use for tax plannin
       max_tokens: 1500
     });
 
-    return completion.choices[0].message.content || 'Unable to generate tax insights';
+    return completion.choices[0].message.content || 'Unable to generate Canadian tax insights';
   } catch (error) {
-    console.error('Error generating tax insights:', error);
-    return 'Unable to generate tax insights at this time';
+    console.error('Error generating Canadian tax insights:', error);
+    return 'Unable to generate Canadian tax insights at this time';
   }
 } 

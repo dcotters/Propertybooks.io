@@ -132,9 +132,9 @@ export default function Dashboard() {
     name: '',
     address: '',
     city: '',
-    state: '',
+    state: 'ON',
     zipCode: '',
-    country: 'US',
+    country: 'CA',
     propertyType: 'SINGLE_FAMILY',
     purchasePrice: '',
     purchaseDate: '',
@@ -179,40 +179,16 @@ export default function Dashboard() {
   const [insightsLoading, setInsightsLoading] = useState(false)
   const { selectedTab, setSelectedTab } = useTabContext();
   const { data: session } = useSession();
-  const [userCountry, setUserCountry] = useState<string | null>(null);
-  const [showLocationModal, setShowLocationModal] = useState(false);
+  // Canada-focused app - no country selection needed
+  // Canada-focused app - no location modal needed
 
   // Fetch real data on component mount
   useEffect(() => {
     fetchData()
   }, [])
 
-  // On mount, fetch user profile for country
-  useEffect(() => {
-    async function fetchUserCountry() {
-      if (session?.user?.id) {
-        const res = await fetch('/api/settings');
-        const data = await res.json();
-        setUserCountry(data.user?.country || null);
-        if (!data.user?.country) setShowLocationModal(true);
-      }
-    }
-    fetchUserCountry();
-  }, [session?.user?.id]);
-
-  // Handler to save country
-  async function handleSaveCountry(newCountry: string) {
-    // Always save the country code
-    await fetch('/api/settings', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ country: newCountry }),
-    });
-    setUserCountry(newCountry);
-    setShowLocationModal(false);
-    // Optionally, refetch data to update tax mapping
-    fetchData();
-  }
+  // Canada-focused app - no country selection needed
+  const userCountry = 'CA';
 
   const fetchData = async () => {
     try {
@@ -278,9 +254,9 @@ export default function Dashboard() {
           name: '',
           address: '',
           city: '',
-          state: '',
+          state: 'ON',
           zipCode: '',
-          country: 'US',
+          country: 'CA',
           propertyType: 'SINGLE_FAMILY',
           purchasePrice: '',
           purchaseDate: '',
@@ -329,7 +305,7 @@ export default function Dashboard() {
       if (transactionForm.receiptFile) {
         const formData = new FormData()
         formData.append('file', transactionForm.receiptFile)
-        formData.append('country', userCountry || 'US')
+        formData.append('country', 'CA')
         
         // First, analyze the receipt using AI
         const analysisResponse = await fetch('/api/ai/receipt-analysis', {
@@ -681,39 +657,13 @@ export default function Dashboard() {
     )
   }
 
-  // Onboarding UI logic
-  if (showLocationModal || !userCountry) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
-          <h2 className="text-xl font-bold mb-4">Welcome! Select your country to get started</h2>
-          <select
-            className="w-full border rounded p-2 mb-4"
-            value={userCountry || ''}
-            onChange={e => setUserCountry(e.target.value)}
-          >
-            <option value="">Select country...</option>
-            <option value="US">United States</option>
-            <option value="CA">Canada</option>
-            {/* Add more countries as needed */}
-          </select>
-          <button
-            className="btn-primary w-full"
-            disabled={!userCountry}
-            onClick={() => userCountry && handleSaveCountry(userCountry)}
-          >
-            Save & Continue
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Canada-focused app - no country selection needed
 
   if (properties.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
         <h2 className="text-2xl font-bold mb-4">Add your first property</h2>
-        <p className="mb-6 text-gray-600">Start by uploading details of your first property. This unlocks transaction tracking and tax insights.</p>
+        <p className="mb-6 text-gray-600">Start by uploading details of your first property. This unlocks transaction tracking and Canadian tax insights for T776 filing.</p>
         <button className="btn-primary" onClick={() => setShowAddPropertyModal(true)}>
           Add Property
         </button>
@@ -732,7 +682,7 @@ export default function Dashboard() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
         <h2 className="text-2xl font-bold mb-4">Add your first transaction</h2>
-        <p className="mb-6 text-gray-600">Upload income or expense transactions for your property. Transactions are automatically categorized for tax based on your location.</p>
+        <p className="mb-6 text-gray-600">Upload income or expense transactions for your property. Transactions are automatically categorized for Canadian tax purposes (T776) with AI-powered receipt analysis.</p>
         <button className="btn-primary" onClick={() => setShowAddTransactionModal(true)}>
           Add Transaction
         </button>
@@ -752,7 +702,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
               <HomeIcon className="h-8 w-8 text-primary-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">PropertyBooks.io</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">🇨🇦 PropertyBooks.ca</span>
             </Link>
             <div className="flex items-center space-x-4">
               <button 
@@ -1548,7 +1498,7 @@ export default function Dashboard() {
                       <input
                         type="text"
                         required
-                        placeholder="New York"
+                        placeholder="Toronto"
                         value={propertyForm.city}
                         onChange={(e) => setPropertyForm({...propertyForm, city: e.target.value})}
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
@@ -1560,7 +1510,7 @@ export default function Dashboard() {
                       <input
                         type="text"
                         required
-                        placeholder="NY"
+                        placeholder="ON"
                         value={propertyForm.state}
                         onChange={(e) => setPropertyForm({...propertyForm, state: e.target.value})}
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
@@ -1572,7 +1522,7 @@ export default function Dashboard() {
                       <input
                         type="text"
                         required
-                        placeholder="10001"
+                        placeholder="M5V 3A8"
                         value={propertyForm.zipCode}
                         onChange={(e) => setPropertyForm({...propertyForm, zipCode: e.target.value})}
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"

@@ -24,6 +24,8 @@ interface ReceiptAnalysis {
   description: string
   suggestedTags: string[]
   complianceNotes: string[]
+  canadianForm: string
+  gstHstEligible: boolean
 }
 
 interface ReceiptAnalysisPreviewProps {
@@ -103,9 +105,9 @@ export default function ReceiptAnalysisPreview({
         </div>
       </div>
 
-      {/* Tax Information */}
+      {/* Canadian Tax Information */}
       <div className="bg-gray-50 rounded-lg p-4 mb-6">
-        <h4 className="font-medium text-gray-900 mb-3">Tax Information</h4>
+        <h4 className="font-medium text-gray-900 mb-3">🇨🇦 Canadian Tax Information</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <p className="text-sm text-gray-600">Tax Category</p>
@@ -120,6 +122,16 @@ export default function ReceiptAnalysisPreview({
           <div>
             <p className="text-sm text-gray-600">Deduction Type</p>
             <p className="font-medium text-gray-900">{analysis.deductionType}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">Canadian Form</p>
+            <p className="font-medium text-gray-900">{analysis.canadianForm}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-600">GST/HST Eligible</p>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${analysis.gstHstEligible ? 'text-green-600 bg-green-100' : 'text-gray-600 bg-gray-100'}`}>
+              {analysis.gstHstEligible ? 'Yes' : 'No'}
+            </span>
           </div>
         </div>
       </div>
