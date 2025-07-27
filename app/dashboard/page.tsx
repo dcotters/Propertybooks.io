@@ -1469,16 +1469,9 @@ export default function Dashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
-                      <select
-                        value={propertyForm.country}
-                        onChange={(e) => setPropertyForm({...propertyForm, country: e.target.value})}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                      >
-                        <option value="US">United States</option>
-                        <option value="CA">Canada</option>
-                        <option value="UK">United Kingdom</option>
-                        <option value="AU">Australia</option>
-                      </select>
+                      <div className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 text-gray-600">
+                        🇨🇦 Canada
+                      </div>
                     </div>
                     
                     <div>
